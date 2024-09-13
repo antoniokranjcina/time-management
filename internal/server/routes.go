@@ -1,8 +1,6 @@
 package server
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,26 +11,39 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	r.Get("/", s.HelloWorldHandler)
+	// Employees
+	r.Get("/employees", s.employeesHandler)
+	r.Get("/employees/{id}", s.employeeHandler)
+	r.Post("/employees", s.addEmployeeHandler)
+	r.Delete("/employees/{id}", s.deleteEmployeeHandler)
 
-	r.Get("/health", s.healthHandler)
+	// Locations
+	r.Get("/locations", s.locationsHandler)
+	r.Post("/locations", s.addLocationHandler)
+	r.Delete("/locations/{id}", s.deleteLocationHandler)
+
+	// Reports
+	r.Get("/reports", s.reportsHandler)
+	r.Post("/reports", s.addReportForApproval)
+	r.Get("/reports/unapproved", s.unapprovedReportsHandler)
+	r.Put("/reports/{id}/approval", s.approveReportHandler)
 
 	return r
 }
 
-func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
-	resp := make(map[string]string)
-	resp["message"] = "Hello World"
+// Employees
+func (s *Server) employeesHandler(w http.ResponseWriter, r *http.Request)      {}
+func (s *Server) employeeHandler(w http.ResponseWriter, r *http.Request)       {}
+func (s *Server) addEmployeeHandler(w http.ResponseWriter, r *http.Request)    {}
+func (s *Server) deleteEmployeeHandler(w http.ResponseWriter, r *http.Request) {}
 
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		log.Fatalf("error handling JSON marshal. Err: %v", err)
-	}
+// Locations
+func (s *Server) locationsHandler(w http.ResponseWriter, r *http.Request)      {}
+func (s *Server) addLocationHandler(w http.ResponseWriter, r *http.Request)    {}
+func (s *Server) deleteLocationHandler(w http.ResponseWriter, r *http.Request) {}
 
-	_, _ = w.Write(jsonResp)
-}
-
-func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
-	jsonResp, _ := json.Marshal(s.db.Health())
-	_, _ = w.Write(jsonResp)
-}
+// Reports
+func (s *Server) reportsHandler(w http.ResponseWriter, r *http.Request)           {}
+func (s *Server) addReportForApproval(w http.ResponseWriter, r *http.Request)     {}
+func (s *Server) unapprovedReportsHandler(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) approveReportHandler(w http.ResponseWriter, r *http.Request)     {}
