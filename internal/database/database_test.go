@@ -2,14 +2,21 @@ package database
 
 import (
 	"context"
+	_ "database/sql"
+	"github.com/testcontainers/testcontainers-go"
 	"log"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/testcontainers/testcontainers-go"
+	_ "github.com/docker/go-connections/nat"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
+
+var dbService *DbService
 
 func mustStartPostgresContainer() (func(context.Context) error, error) {
 	var (
@@ -37,6 +44,11 @@ func mustStartPostgresContainer() (func(context.Context) error, error) {
 	password = dbPwd
 	username = dbUser
 
+	if os.Getenv("DB_SCHEMA") == "" {
+		os.Setenv("DB_SCHEMA", "public")
+	}
+	schema = os.Getenv("DB_SCHEMA")
+
 	dbHost, err := dbContainer.Host(context.Background())
 	if err != nil {
 		return dbContainer.Terminate, err
@@ -59,42 +71,102 @@ func TestMain(m *testing.M) {
 		log.Fatalf("could not start postgres container: %v", err)
 	}
 
-	m.Run()
-
-	if teardown != nil && teardown(context.Background()) != nil {
-		log.Fatalf("could not teardown postgres container: %v", err)
+	dbService, err = NewConnection()
+	if err != nil {
+		log.Fatalf("error establishing database connection: %v", err)
 	}
+
+	exitCode := m.Run()
+
+	if err := dbService.Close(); err != nil {
+		log.Fatalf("error closing database: %v", err)
+	}
+
+	if teardown != nil {
+		if err := teardown(context.Background()); err != nil {
+			log.Fatalf("could not teardown postgres container: %v", err)
+		}
+	}
+
+	os.Exit(exitCode)
 }
 
-func TestNew(t *testing.T) {
-	srv := New()
-	if srv == nil {
-		t.Fatal("New() returned nil")
+func TestDbService_GetLocations(t *testing.T) {
+	err := dbService.Init()
+	assert.NoError(t, err)
+
+	loc, err := dbService.CreateLocation("Test Location")
+	assert.NoError(t, err)
+
+	locations, err := dbService.GetLocations()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, locations)
+
+	found := false
+	for _, location := range locations {
+		if location.Id == loc.Id && location.Name == "Test Location" {
+			found = true
+			break
+		}
 	}
+	assert.True(t, found)
 }
 
-func TestHealth(t *testing.T) {
-	srv := New()
+func TestDbService_GetLocationById(t *testing.T) {
+	err := dbService.Init()
+	assert.NoError(t, err)
 
-	stats := srv.Health()
+	loc, err := dbService.CreateLocation("Test Location")
+	assert.NoError(t, err)
 
-	if stats["status"] != "up" {
-		t.Fatalf("expected status to be up, got %s", stats["status"])
-	}
+	location, err := dbService.GetLocationById(loc.Id)
+	assert.NoError(t, err)
+	assert.Equal(t, loc.Name, location.Name)
+}
 
-	if _, ok := stats["error"]; ok {
-		t.Fatalf("expected error not to be present")
-	}
+func TestDbService_CreateLocation(t *testing.T) {
+	err := dbService.Init()
+	assert.NoError(t, err)
 
-	if stats["message"] != "It's healthy" {
-		t.Fatalf("expected message to be 'It's healthy', got %s", stats["message"])
+	loc, err := dbService.CreateLocation("New Test Location")
+	assert.NoError(t, err)
+	assert.NotNil(t, loc)
+	assert.Equal(t, "New Test Location", loc.Name)
+}
+
+func TestDbService_UpdateLocation(t *testing.T) {
+	err := dbService.Init()
+	assert.NoError(t, err)
+
+	loc, err := dbService.CreateLocation("Old Name")
+	assert.NoError(t, err)
+
+	updatedLoc, err := dbService.UpdateLocation(loc.Id, "New Name")
+	assert.NoError(t, err)
+	assert.Equal(t, "New Name", updatedLoc.Name)
+	assert.Equal(t, loc.Id, updatedLoc.Id)
+}
+
+func TestDbService_DeleteLocationById(t *testing.T) {
+	err := dbService.Init()
+	assert.NoError(t, err)
+
+	loc, err := dbService.CreateLocation("To Delete")
+	assert.NoError(t, err)
+
+	err = dbService.DeleteLocationById(loc.Id)
+	assert.NoError(t, err)
+
+	locations, err := dbService.GetLocations()
+	assert.NoError(t, err)
+
+	for _, location := range locations {
+		assert.NotEqual(t, loc.Id, location.Id)
 	}
 }
 
 func TestClose(t *testing.T) {
-	srv := New()
-
-	if srv.Close() != nil {
+	if dbService.Close() != nil {
 		t.Fatalf("expected Close() to return nil")
 	}
 }
