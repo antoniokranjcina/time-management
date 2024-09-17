@@ -1,6 +1,6 @@
 package commands
 
-import "time-management/internal/locations/domain"
+import "time-management/internal/location/domain"
 
 type UpdateLocationCommand struct {
 	Id   string

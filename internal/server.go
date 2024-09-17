@@ -8,8 +8,8 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"time-management/internal/locations/infrastructure/repository"
-	http2 "time-management/internal/locations/interfaces/http"
+	"time-management/internal/location/infrastructure/repository"
+	http2 "time-management/internal/location/interface/http"
 )
 
 type Server struct {

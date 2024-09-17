@@ -5,9 +5,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
-	"time-management/internal/locations/application/commands"
-	"time-management/internal/locations/application/queries"
-	"time-management/internal/locations/domain"
+	"time-management/internal/location/application/commands"
+	"time-management/internal/location/application/queries"
+	"time-management/internal/location/domain"
 	"time-management/internal/shared/util"
 )
 

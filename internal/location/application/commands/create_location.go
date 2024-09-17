@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/google/uuid"
 	"time"
-	"time-management/internal/locations/domain"
+	"time-management/internal/location/domain"
 )
 
 type CreateLocationCommand struct {

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"time-management/internal/locations/domain"
+	"time-management/internal/location/domain"
 )
 
 type PgLocationRepository struct {
@@ -16,7 +16,7 @@ func NewPgLocationRepository(db *sql.DB) *PgLocationRepository {
 }
 
 func (r *PgLocationRepository) createLocationTable() error {
-	query := `create table if not exists locations (
+	query := `create table if not exists location (
 		id varchar(50) primary key,
 		name varchar(50),
 		created_at serial
@@ -27,7 +27,7 @@ func (r *PgLocationRepository) createLocationTable() error {
 }
 
 func (r *PgLocationRepository) GetById(id string) (*domain.Location, error) {
-	query := `SELECT id, name, created_at FROM locations WHERE id = $1`
+	query := `SELECT id, name, created_at FROM location WHERE id = $1`
 	row := r.DB.QueryRow(query, id)
 
 	location := &domain.Location{}
@@ -43,10 +43,10 @@ func (r *PgLocationRepository) GetById(id string) (*domain.Location, error) {
 }
 
 func (r *PgLocationRepository) GetAll() ([]domain.Location, error) {
-	query := `SELECT * FROM locations`
+	query := `SELECT * FROM location`
 	rows, err := r.DB.Query(query)
 	if err != nil {
-		log.Println("Error fetching locations:", err)
+		log.Println("Error fetching location:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -65,7 +65,7 @@ func (r *PgLocationRepository) GetAll() ([]domain.Location, error) {
 
 func (r *PgLocationRepository) Save(location *domain.Location) (*domain.Location, error) {
 	query := `
-		INSERT INTO locations (id, name, created_at) 
+		INSERT INTO location (id, name, created_at) 
 		VALUES ($1, $2, $3) 
 		RETURNING id, name, created_at
 	`
@@ -86,7 +86,7 @@ func (r *PgLocationRepository) Save(location *domain.Location) (*domain.Location
 }
 
 func (r *PgLocationRepository) Update(id string, name string) (*domain.Location, error) {
-	query := `UPDATE locations SET name = $1 WHERE id = $2 RETURNING id, name, created_at`
+	query := `UPDATE location SET name = $1 WHERE id = $2 RETURNING id, name, created_at`
 	loc := &domain.Location{}
 
 	err := r.DB.QueryRow(query, name, id).Scan(&loc.Id, &loc.Name, &loc.CreatedAt)
@@ -99,7 +99,7 @@ func (r *PgLocationRepository) Update(id string, name string) (*domain.Location,
 }
 
 func (r *PgLocationRepository) Delete(id string) error {
-	query := `DELETE FROM locations WHERE id = $1`
+	query := `DELETE FROM location WHERE id = $1`
 	_, err := r.DB.Exec(query, id)
 	if err != nil {
 		log.Println("Error deleting location:", err)

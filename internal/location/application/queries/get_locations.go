@@ -1,6 +1,6 @@
 package queries
 
-import "time-management/internal/locations/domain"
+import "time-management/internal/location/domain"
 
 type GetLocationsHandler struct {
 	Repo domain.LocationRepository
