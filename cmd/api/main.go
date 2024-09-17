@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"time-management/internal/server"
+	"time-management/internal"
 )
 
 func main() {
-	newServer := server.NewServer()
-	err := newServer.ListenAndServe()
+	server := internal.NewServer()
+	err := server.ListenAndServe()
 	if err != nil {
 		panic(fmt.Sprintf("cannot start server: %s", err))
 	}
