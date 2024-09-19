@@ -8,8 +8,10 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"time-management/internal/location/infrastructure/repository"
-	http2 "time-management/internal/location/interface/http"
+	empRepo "time-management/internal/employees/infrastructure/repository"
+	empHttp "time-management/internal/employees/interface/http"
+	locRepo "time-management/internal/location/infrastructure/repository"
+	locHttp "time-management/internal/location/interface/http"
 )
 
 type Server struct {
@@ -31,15 +33,17 @@ func NewServer() *http.Server {
 	defer CloseDB()
 
 	// Initialize repositories
-	locationRepository := repository.NewPgLocationRepository(db)
+	locationRepository := locRepo.NewPgLocationRepository(db)
+	employeeRepository := empRepo.NewPgEmployeeRepository(db)
 
 	// Initialize handlers
-	locationHandler := http2.NewLocationHandler(locationRepository)
+	locationHandler := locHttp.NewLocationHandler(locationRepository)
+	employeeHandler := empHttp.NewEmployeeHandler(employeeRepository)
 
 	// Declare Server config
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      SetupRoutes(locationHandler),
+		Handler:      SetupRoutes(locationHandler, employeeHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,

@@ -1,4 +1,4 @@
-package queries
+package query
 
 import "time-management/internal/location/domain"
 

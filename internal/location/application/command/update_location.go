@@ -1,4 +1,4 @@
-package commands
+package command
 
 import "time-management/internal/location/domain"
 
