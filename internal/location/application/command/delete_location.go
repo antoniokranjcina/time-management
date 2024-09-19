@@ -1,9 +1,9 @@
-package commands
+package command
 
 import "time-management/internal/location/domain"
 
 type DeleteLocationCommand struct {
-	ID string
+	Id string
 }
 
 type DeleteLocationHandler struct {
@@ -11,5 +11,5 @@ type DeleteLocationHandler struct {
 }
 
 func (h *DeleteLocationHandler) Handle(cmd DeleteLocationCommand) error {
-	return h.Repo.Delete(cmd.ID)
+	return h.Repo.Delete(cmd.Id)
 }

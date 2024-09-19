@@ -2,30 +2,31 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
-	"time-management/internal/location/application/commands"
-	"time-management/internal/location/application/queries"
+	"time-management/internal/location/application/command"
+	"time-management/internal/location/application/query"
 	"time-management/internal/location/domain"
 	"time-management/internal/shared/util"
 )
 
 type LocationHandler struct {
-	CreateLocationHandler commands.CreateLocationHandler
-	GetLocationsHandler   queries.GetLocationsHandler
-	GetLocationHandler    queries.GetLocationHandler
-	UpdateLocationHandler commands.UpdateLocationHandler
-	DeleteLocationHandler commands.DeleteLocationHandler
+	CreateLocationHandler command.CreateLocationHandler
+	GetLocationsHandler   query.GetLocationsHandler
+	GetLocationHandler    query.GetLocationHandler
+	UpdateLocationHandler command.UpdateLocationHandler
+	DeleteLocationHandler command.DeleteLocationHandler
 }
 
 func NewLocationHandler(repository domain.LocationRepository) *LocationHandler {
 	return &LocationHandler{
-		CreateLocationHandler: commands.CreateLocationHandler{Repo: repository},
-		GetLocationsHandler:   queries.GetLocationsHandler{Repo: repository},
-		GetLocationHandler:    queries.GetLocationHandler{Repo: repository},
-		UpdateLocationHandler: commands.UpdateLocationHandler{Repo: repository},
-		DeleteLocationHandler: commands.DeleteLocationHandler{Repo: repository},
+		CreateLocationHandler: command.CreateLocationHandler{Repo: repository},
+		GetLocationsHandler:   query.GetLocationsHandler{Repo: repository},
+		GetLocationHandler:    query.GetLocationHandler{Repo: repository},
+		UpdateLocationHandler: command.UpdateLocationHandler{Repo: repository},
+		DeleteLocationHandler: command.DeleteLocationHandler{Repo: repository},
 	}
 }
 
@@ -37,7 +38,7 @@ func (h *LocationHandler) CreateLocation(w http.ResponseWriter, r *http.Request)
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	location, err := h.CreateLocationHandler.Handle(commands.CreateLocationCommand{Name: req.Name})
+	location, err := h.CreateLocationHandler.Handle(command.CreateLocationCommand{Name: req.Name})
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: err.Error()})
 	}
@@ -58,9 +59,12 @@ func (h *LocationHandler) GetLocations(w http.ResponseWriter, r *http.Request) e
 func (h *LocationHandler) GetLocation(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
-	location, err := h.GetLocationHandler.Handle(queries.GetLocationQuery{Id: id})
+	location, err := h.GetLocationHandler.Handle(query.GetLocationQuery{Id: id})
 	if err != nil {
-		log.Println(err)
+		if errors.Is(err, domain.ErrLocationNotFound) {
+			return util.WriteJson(w, http.StatusNotFound, util.ApiError{Error: err.Error()})
+		}
+
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: err.Error()})
 	}
 
@@ -75,13 +79,11 @@ func (h *LocationHandler) UpdateLocation(w http.ResponseWriter, r *http.Request)
 
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil || requestData.Name == "" {
-		log.Println("Invalid request body:", err)
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: "Invalid request body"})
 	}
 
-	location, err := h.UpdateLocationHandler.Handle(commands.UpdateLocationCommand{Id: id, Name: requestData.Name})
+	location, err := h.UpdateLocationHandler.Handle(command.UpdateLocationCommand{Id: id, Name: requestData.Name})
 	if err != nil {
-		log.Println("Error updating location:", err)
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: err.Error()})
 	}
 
@@ -91,10 +93,10 @@ func (h *LocationHandler) UpdateLocation(w http.ResponseWriter, r *http.Request)
 func (h *LocationHandler) DeleteLocation(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
-	err := h.DeleteLocationHandler.Handle(commands.DeleteLocationCommand{ID: id})
+	err := h.DeleteLocationHandler.Handle(command.DeleteLocationCommand{Id: id})
 	if err != nil {
-		log.Println(err)
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: "Error deleting location"})
 	}
+
 	return util.WriteJson(w, http.StatusNoContent, nil)
 }
