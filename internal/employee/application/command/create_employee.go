@@ -3,8 +3,8 @@ package command
 import (
 	"github.com/google/uuid"
 	"time"
-	"time-management/internal/employees/domain"
-	"time-management/internal/employees/util"
+	"time-management/internal/employee/domain"
+	"time-management/internal/employee/util"
 )
 
 type CreateEmployeeCommand struct {

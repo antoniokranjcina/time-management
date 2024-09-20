@@ -1,6 +1,6 @@
 package command
 
-import "time-management/internal/employees/domain"
+import "time-management/internal/employee/domain"
 
 type UpdateEmployeeCommand struct {
 	Id        string

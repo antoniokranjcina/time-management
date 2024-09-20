@@ -3,7 +3,7 @@ package internal
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	empHttp "time-management/internal/employees/interface/http"
+	empHttp "time-management/internal/employee/interface/http"
 	locHttp "time-management/internal/location/interface/http"
 	"time-management/internal/shared/util"
 )

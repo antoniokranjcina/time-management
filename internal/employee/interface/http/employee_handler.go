@@ -5,9 +5,9 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"net/http"
-	"time-management/internal/employees/application/command"
-	"time-management/internal/employees/application/query"
-	"time-management/internal/employees/domain"
+	"time-management/internal/employee/application/command"
+	"time-management/internal/employee/application/query"
+	"time-management/internal/employee/domain"
 	"time-management/internal/shared/util"
 )
 

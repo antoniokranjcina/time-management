@@ -1,6 +1,6 @@
 package query
 
-import "time-management/internal/employees/domain"
+import "time-management/internal/employee/domain"
 
 type GetEmployeesHandler struct {
 	Repo domain.EmployeeRepository

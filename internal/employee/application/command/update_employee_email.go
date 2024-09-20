@@ -1,8 +1,8 @@
 package command
 
 import (
-	"time-management/internal/employees/domain"
-	"time-management/internal/employees/util"
+	"time-management/internal/employee/domain"
+	"time-management/internal/employee/util"
 )
 
 type UpdateEmailCommand struct {

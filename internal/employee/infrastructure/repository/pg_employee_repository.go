@@ -3,8 +3,11 @@ package repository
 import (
 	"database/sql"
 	"errors"
-	"time-management/internal/employees/domain"
+	"fmt"
+	"time-management/internal/employee/domain"
 )
+
+const tableName = "employees"
 
 type PgEmployeeRepository struct {
 	DB *sql.DB
@@ -23,7 +26,7 @@ func NewPgEmployeeRepository(db *sql.DB) *PgEmployeeRepository {
 }
 
 func (r *PgEmployeeRepository) createEmployeeTable() error {
-	query := `create table if not exists employees (
+	query := fmt.Sprintf(`create table if not exists %s (
 		id varchar(50) primary key,
 		first_name varchar(50),
 		last_name varchar(50),
@@ -31,29 +34,24 @@ func (r *PgEmployeeRepository) createEmployeeTable() error {
 		password varchar(50),
 		created_at serial,
 		active boolean
-	)`
+	)`, tableName)
 
 	_, err := r.DB.Exec(query)
 	return err
 }
 
 func (r *PgEmployeeRepository) Save(employee *domain.Employee) (*domain.Employee, error) {
-	var exists bool
-	emailCheckQuery := `SELECT EXISTS(SELECT 1 FROM employees WHERE email = $1)`
-	err := r.DB.QueryRow(emailCheckQuery, employee.Email).Scan(&exists)
-	if err != nil {
+	if exists, err := r.isEmailTaken(employee.Email); err != nil {
 		return nil, err
-	}
-
-	if exists {
+	} else if exists {
 		return nil, domain.ErrEmailTaken
 	}
 
-	query := `
-		INSERT INTO employees (id, first_name, last_name, email, password, created_at, active)
+	query := fmt.Sprintf(`
+		INSERT INTO %s (id, first_name, last_name, email, password, created_at, active)
 		VALUES ($1, $2, $3, $4, $5, $6, $7) 
 		RETURNING id, first_name, last_name, email, password, created_at, active
-	`
+	`, tableName)
 
 	row := r.DB.QueryRow(
 		query,
@@ -75,7 +73,8 @@ func (r *PgEmployeeRepository) Save(employee *domain.Employee) (*domain.Employee
 }
 
 func (r *PgEmployeeRepository) GetAll() ([]domain.Employee, error) {
-	query := `SELECT * FROM employees`
+	query := fmt.Sprintf(`SELECT * FROM %s`, tableName)
+
 	rows, err := r.DB.Query(query)
 	if err != nil {
 		return nil, err
@@ -91,9 +90,9 @@ func (r *PgEmployeeRepository) GetAll() ([]domain.Employee, error) {
 }
 
 func (r *PgEmployeeRepository) GetById(id string) (*domain.Employee, error) {
-	query := `SELECT * FROM employees WHERE id = $1`
-	row := r.DB.QueryRow(query, id)
+	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1`, tableName)
 
+	row := r.DB.QueryRow(query, id)
 	employee, err := scanEmployeeRow(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -106,11 +105,11 @@ func (r *PgEmployeeRepository) GetById(id string) (*domain.Employee, error) {
 }
 
 func (r *PgEmployeeRepository) Update(id, firstName, lastName string) (*domain.Employee, error) {
-	query := `
-		UPDATE employees SET first_name = $1, last_name = $2 
+	query := fmt.Sprintf(`
+		UPDATE %s SET first_name = $1, last_name = $2 
 	 	WHERE id = $3 
 		RETURNING id, first_name, last_name, email, password, created_at, active
-	`
+	`, tableName)
 
 	row := r.DB.QueryRow(query, firstName, lastName, id)
 	employee, err := scanEmployeeRow(row)
@@ -122,7 +121,7 @@ func (r *PgEmployeeRepository) Update(id, firstName, lastName string) (*domain.E
 }
 
 func (r *PgEmployeeRepository) ChangePassword(id, password string) error {
-	query := `UPDATE employees SET password = $1 WHERE id = $2`
+	query := fmt.Sprintf(`UPDATE %s SET password = $1 WHERE id = $2`, tableName)
 
 	_, err := r.DB.Exec(query, password, id)
 	if err != nil {
@@ -133,7 +132,7 @@ func (r *PgEmployeeRepository) ChangePassword(id, password string) error {
 }
 
 func (r *PgEmployeeRepository) ChangeEmail(id, email string) error {
-	query := `UPDATE employees SET email = $1 WHERE id = $2`
+	query := fmt.Sprintf(`UPDATE %s SET email = $1 WHERE id = $2`, tableName)
 
 	_, err := r.DB.Exec(query, email, id)
 	if err != nil {
@@ -144,7 +143,7 @@ func (r *PgEmployeeRepository) ChangeEmail(id, email string) error {
 }
 
 func (r *PgEmployeeRepository) ToggleStatus(id string, status bool) (bool, error) {
-	query := `UPDATE employees SET active = $1 WHERE id = $2 RETURNING active`
+	query := fmt.Sprintf(`UPDATE %s SET active = $1 WHERE id = $2 RETURNING active`, tableName)
 
 	var newStatus bool
 	err := r.DB.QueryRow(query, status, id).Scan(&newStatus)
@@ -156,7 +155,7 @@ func (r *PgEmployeeRepository) ToggleStatus(id string, status bool) (bool, error
 }
 
 func (r *PgEmployeeRepository) Delete(id string) error {
-	query := `DELETE FROM employees WHERE id = $1`
+	query := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`, tableName)
 
 	_, err := r.DB.Exec(query, id)
 	if err != nil {
@@ -164,6 +163,18 @@ func (r *PgEmployeeRepository) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func (r *PgEmployeeRepository) isEmailTaken(email string) (bool, error) {
+	query := fmt.Sprintf(`SELECT EXISTS(SELECT 1 FROM %s WHERE email = $1)`, tableName)
+
+	var exists bool
+	err := r.DB.QueryRow(query, email).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
 
 func scanEmployeeRow(row *sql.Row) (*domain.Employee, error) {

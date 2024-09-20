@@ -8,8 +8,8 @@ import (
 	"os"
 	"strconv"
 	"time"
-	empRepo "time-management/internal/employees/infrastructure/repository"
-	empHttp "time-management/internal/employees/interface/http"
+	empRepo "time-management/internal/employee/infrastructure/repository"
+	empHttp "time-management/internal/employee/interface/http"
 	locRepo "time-management/internal/location/infrastructure/repository"
 	locHttp "time-management/internal/location/interface/http"
 )
