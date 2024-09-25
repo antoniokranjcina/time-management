@@ -5,6 +5,7 @@ import (
 	"time"
 	"time-management/internal/employee/domain"
 	"time-management/internal/employee/util"
+	sharedUtil "time-management/internal/shared/util"
 )
 
 type CreateEmployeeCommand struct {
@@ -21,16 +22,16 @@ type CreateEmployeeHandler struct {
 func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*domain.Employee, error) {
 	// Validate logic
 	if cmd.FirstName == "" {
-		return nil, domain.NewValidationError(domain.ErrFirstNameTooShort)
+		return nil, sharedUtil.NewValidationError(domain.ErrFirstNameTooShort)
 	}
 	if cmd.LastName == "" {
-		return nil, domain.NewValidationError(domain.ErrLastNameTooShort)
+		return nil, sharedUtil.NewValidationError(domain.ErrLastNameTooShort)
 	}
 	if !util.EmailRegex.MatchString(cmd.Email) {
-		return nil, domain.NewValidationError(domain.ErrEmailWrongFormat)
+		return nil, sharedUtil.NewValidationError(domain.ErrEmailWrongFormat)
 	}
 	if len(cmd.Password) < 6 {
-		return nil, domain.NewValidationError(domain.ErrPasswordTooShort)
+		return nil, sharedUtil.NewValidationError(domain.ErrPasswordTooShort)
 	}
 
 	// Create the domain entity

@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"time-management/internal/employee/application/command"
@@ -53,7 +52,7 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 		Password:  req.Password,
 	})
 	if err != nil {
-		return handleError(w, err)
+		return util.HandleError(w, err, http.StatusBadRequest)
 	}
 
 	return util.WriteJson(w, http.StatusCreated, employee)
@@ -62,7 +61,7 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) error {
 	employees, err := h.GetEmployeesHandler.Handle()
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: err.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, employees)
@@ -73,11 +72,7 @@ func (h *EmployeeHandler) GetEmployee(w http.ResponseWriter, r *http.Request) er
 
 	employee, err := h.GetEmployeeHandler.Handle(query.GetEmployeeQuery{Id: id})
 	if err != nil {
-		if errors.Is(err, domain.ErrEmployeeNotFound) {
-			return util.WriteJson(w, http.StatusNotFound, util.ApiError{Error: err.Error()})
-		}
-
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: err.Error()})
+		return util.HandleError(w, err, http.StatusNotFound)
 	}
 
 	return util.WriteJson(w, http.StatusOK, employee)
@@ -99,7 +94,7 @@ func (h *EmployeeHandler) UpdateEmployee(w http.ResponseWriter, r *http.Request)
 		LastName:  req.LastName,
 	})
 	if err != nil {
-		return handleError(w, err)
+		return util.HandleError(w, err, http.StatusBadRequest)
 	}
 
 	return util.WriteJson(w, http.StatusOK, updatedEmployee)
@@ -119,7 +114,7 @@ func (h *EmployeeHandler) ChangePassword(w http.ResponseWriter, r *http.Request)
 		Password: req.Password,
 	})
 	if err != nil {
-		return handleError(w, err)
+		return util.HandleError(w, err, http.StatusBadRequest)
 	}
 
 	return util.WriteJson(w, http.StatusOK, nil)
@@ -139,7 +134,7 @@ func (h *EmployeeHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) er
 		Email: req.Email,
 	})
 	if err != nil {
-		return handleError(w, err)
+		return util.HandleError(w, err, http.StatusBadRequest)
 	}
 
 	return util.WriteJson(w, http.StatusOK, nil)
@@ -159,7 +154,7 @@ func (h *EmployeeHandler) ToggleEmployeeStatus(w http.ResponseWriter, r *http.Re
 		Active: req.Active,
 	})
 	if err != nil {
-		return handleError(w, err)
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, status)
@@ -170,17 +165,8 @@ func (h *EmployeeHandler) DeleteEmployee(w http.ResponseWriter, r *http.Request)
 
 	err := h.DeleteEmployeeHandler.Handle(command.DeleteEmployeeCommand{Id: id})
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: err.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusNoContent, nil)
-}
-
-func handleError(w http.ResponseWriter, err error) error {
-	var validationErr *domain.ValidationError
-	if errors.As(err, &validationErr) {
-		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: validationErr.Error()})
-	}
-
-	return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: err.Error()})
 }

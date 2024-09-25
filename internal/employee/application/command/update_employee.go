@@ -1,6 +1,9 @@
 package command
 
-import "time-management/internal/employee/domain"
+import (
+	"time-management/internal/employee/domain"
+	sharedUtil "time-management/internal/shared/util"
+)
 
 type UpdateEmployeeCommand struct {
 	Id        string
@@ -15,10 +18,10 @@ type UpdateEmployeeHandler struct {
 func (h *UpdateEmployeeHandler) Handle(cmd UpdateEmployeeCommand) (*domain.Employee, error) {
 	// Validation
 	if cmd.FirstName == "" {
-		return nil, domain.NewValidationError(domain.ErrFirstNameTooShort)
+		return nil, sharedUtil.NewValidationError(domain.ErrFirstNameTooShort)
 	}
 	if cmd.LastName == "" {
-		return nil, domain.NewValidationError(domain.ErrLastNameTooShort)
+		return nil, sharedUtil.NewValidationError(domain.ErrLastNameTooShort)
 	}
 
 	// Update the domain entity through repository
