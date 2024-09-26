@@ -15,5 +15,6 @@ func (h *GetLocationHandler) Handle(query GetLocationQuery) (*domain.Location, e
 	if err != nil {
 		return nil, err
 	}
+
 	return location, nil
 }

@@ -15,5 +15,6 @@ func (h *GetEmployeeHandler) Handle(query GetEmployeeQuery) (*domain.Employee, e
 	if err != nil {
 		return nil, err
 	}
+
 	return employee, nil
 }

@@ -1,6 +1,9 @@
 package command
 
-import "time-management/internal/location/domain"
+import (
+	"time-management/internal/location/domain"
+	"time-management/internal/shared/util"
+)
 
 type UpdateLocationCommand struct {
 	Id   string
@@ -13,8 +16,8 @@ type UpdateLocationHandler struct {
 
 func (h *UpdateLocationHandler) Handle(cmd UpdateLocationCommand) (*domain.Location, error) {
 	// Validation logic
-	if cmd.Name == "" {
-		return nil, domain.ErrInvalidName
+	if cmd.Name == "" || len(cmd.Name) >= 50 {
+		return nil, util.NewValidationError(domain.ErrInvalidName)
 	}
 
 	// Update the domain entity through the repository

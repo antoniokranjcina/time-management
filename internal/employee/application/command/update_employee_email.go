@@ -3,6 +3,7 @@ package command
 import (
 	"time-management/internal/employee/domain"
 	"time-management/internal/employee/util"
+	sharedUtil "time-management/internal/shared/util"
 )
 
 type UpdateEmailCommand struct {
@@ -17,7 +18,7 @@ type UpdateEmailHandler struct {
 func (h *UpdateEmailHandler) Handle(cmd UpdateEmailCommand) error {
 	// Validation
 	if !util.EmailRegex.MatchString(cmd.Email) {
-		return domain.NewValidationError(domain.ErrEmailWrongFormat)
+		return sharedUtil.NewValidationError(domain.ErrEmailWrongFormat)
 	}
 
 	// Update the email through repository

@@ -11,5 +11,10 @@ type DeleteEmployeeHandler struct {
 }
 
 func (h *DeleteEmployeeHandler) Handle(cmd DeleteEmployeeCommand) error {
-	return h.Repo.Delete(cmd.Id)
+	err := h.Repo.Delete(cmd.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

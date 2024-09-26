@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"log"
 	"time-management/internal/location/domain"
+	"time-management/internal/shared/util"
 )
 
-const tableName = "locations"
+const TableName = "locations"
 
 type PgLocationRepository struct {
 	DB *sql.DB
@@ -31,7 +32,7 @@ func (r *PgLocationRepository) createLocationTable() error {
 		id varchar(50) primary key,
 		name varchar(50),
 		created_at serial
-	)`, tableName)
+	)`, TableName)
 
 	_, err := r.DB.Exec(query)
 	return err
@@ -42,7 +43,7 @@ func (r *PgLocationRepository) Save(location *domain.Location) (*domain.Location
 		INSERT INTO %s (id, name, created_at) 
 		VALUES ($1, $2, $3) 
 		RETURNING id, name, created_at
-	`, tableName)
+	`, TableName)
 
 	row := r.DB.QueryRow(query, location.Id, location.Name, location.CreatedAt)
 	savedLocation, err := scanLocationRow(row)
@@ -55,7 +56,7 @@ func (r *PgLocationRepository) Save(location *domain.Location) (*domain.Location
 }
 
 func (r *PgLocationRepository) GetAll() ([]domain.Location, error) {
-	query := fmt.Sprintf(`SELECT * FROM %s`, tableName)
+	query := fmt.Sprintf(`SELECT * FROM %s`, TableName)
 
 	rows, err := r.DB.Query(query)
 	if err != nil {
@@ -72,13 +73,13 @@ func (r *PgLocationRepository) GetAll() ([]domain.Location, error) {
 }
 
 func (r *PgLocationRepository) GetById(id string) (*domain.Location, error) {
-	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1`, tableName)
+	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1`, TableName)
 
 	row := r.DB.QueryRow(query, id)
 	location, err := scanLocationRow(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.ErrLocationNotFound
+			return nil, util.NewValidationError(domain.ErrLocationNotFound)
 		}
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (r *PgLocationRepository) GetById(id string) (*domain.Location, error) {
 }
 
 func (r *PgLocationRepository) Update(id string, name string) (*domain.Location, error) {
-	query := fmt.Sprintf(`UPDATE %s SET name = $1 WHERE id = $2 RETURNING id, name, created_at`, tableName)
+	query := fmt.Sprintf(`UPDATE %s SET name = $1 WHERE id = $2 RETURNING id, name, created_at`, TableName)
 
 	row := r.DB.QueryRow(query, name, id)
 	location, err := scanLocationRow(row)
@@ -99,7 +100,7 @@ func (r *PgLocationRepository) Update(id string, name string) (*domain.Location,
 }
 
 func (r *PgLocationRepository) Delete(id string) error {
-	query := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`, tableName)
+	query := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`, TableName)
 
 	_, err := r.DB.Exec(query, id)
 	if err != nil {

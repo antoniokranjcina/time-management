@@ -12,6 +12,8 @@ import (
 	empHttp "time-management/internal/employee/interface/http"
 	locRepo "time-management/internal/location/infrastructure/repository"
 	locHttp "time-management/internal/location/interface/http"
+	repRepo "time-management/internal/report/infrastructure/repository"
+	repHttp "time-management/internal/report/interface/http"
 )
 
 type Server struct {
@@ -35,15 +37,17 @@ func NewServer() *http.Server {
 	// Initialize repositories
 	locationRepository := locRepo.NewPgLocationRepository(db)
 	employeeRepository := empRepo.NewPgEmployeeRepository(db)
+	reportRepository := repRepo.NewPgReportRepository(db)
 
 	// Initialize handlers
 	locationHandler := locHttp.NewLocationHandler(locationRepository)
 	employeeHandler := empHttp.NewEmployeeHandler(employeeRepository)
+	reportHandler := repHttp.NewReportHandler(reportRepository)
 
 	// Declare Server config
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      SetupRoutes(locationHandler, employeeHandler),
+		Handler:      SetupRoutes(locationHandler, employeeHandler, reportHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
