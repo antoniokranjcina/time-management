@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"net/http"
-	"time-management/internal/employee/application/command"
-	"time-management/internal/employee/application/query"
-	"time-management/internal/employee/domain"
 	"time-management/internal/shared/util"
+	"time-management/internal/user/employee/application/command"
+	"time-management/internal/user/employee/application/query"
+	"time-management/internal/user/employee/domain"
 )
 
 type EmployeeHandler struct {

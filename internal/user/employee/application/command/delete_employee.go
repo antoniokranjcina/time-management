@@ -1,6 +1,8 @@
 package command
 
-import "time-management/internal/employee/domain"
+import (
+	"time-management/internal/user/employee/domain"
+)
 
 type DeleteEmployeeCommand struct {
 	Id string

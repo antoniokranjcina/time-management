@@ -1,8 +1,8 @@
 package command
 
 import (
-	"time-management/internal/employee/domain"
 	sharedUtil "time-management/internal/shared/util"
+	"time-management/internal/user/employee/domain"
 )
 
 type UpdatePasswordCommand struct {
@@ -15,12 +15,10 @@ type UpdatePasswordHandler struct {
 }
 
 func (h *UpdatePasswordHandler) Handle(cmd UpdatePasswordCommand) error {
-	// Validation
 	if len(cmd.Password) < 6 {
 		return sharedUtil.NewValidationError(domain.ErrPasswordTooShort)
 	}
 
-	// Update the password through repository
 	err := h.Repo.ChangePassword(cmd.Id, cmd.Password)
 	if err != nil {
 		return err

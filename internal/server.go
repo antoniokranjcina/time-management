@@ -8,12 +8,12 @@ import (
 	"os"
 	"strconv"
 	"time"
-	empRepo "time-management/internal/employee/infrastructure/repository"
-	empHttp "time-management/internal/employee/interface/http"
 	locRepo "time-management/internal/location/infrastructure/repository"
 	locHttp "time-management/internal/location/interface/http"
 	repRepo "time-management/internal/report/infrastructure/repository"
 	repHttp "time-management/internal/report/interface/http"
+	empRepo "time-management/internal/user/employee/infrastructure/repository"
+	empHttp "time-management/internal/user/employee/interface/http"
 )
 
 type Server struct {

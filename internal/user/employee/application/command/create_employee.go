@@ -2,10 +2,11 @@ package command
 
 import (
 	"github.com/google/uuid"
+	"net/mail"
 	"time"
-	"time-management/internal/employee/domain"
-	"time-management/internal/employee/util"
 	sharedUtil "time-management/internal/shared/util"
+	"time-management/internal/user"
+	"time-management/internal/user/employee/domain"
 )
 
 type CreateEmployeeCommand struct {
@@ -20,22 +21,20 @@ type CreateEmployeeHandler struct {
 }
 
 func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*domain.Employee, error) {
-	// Validate logic
 	if cmd.FirstName == "" {
 		return nil, sharedUtil.NewValidationError(domain.ErrFirstNameTooShort)
 	}
 	if cmd.LastName == "" {
 		return nil, sharedUtil.NewValidationError(domain.ErrLastNameTooShort)
 	}
-	if !util.EmailRegex.MatchString(cmd.Email) {
+	if _, err := mail.ParseAddress(cmd.Email); err != nil {
 		return nil, sharedUtil.NewValidationError(domain.ErrEmailWrongFormat)
 	}
 	if len(cmd.Password) < 6 {
 		return nil, sharedUtil.NewValidationError(domain.ErrPasswordTooShort)
 	}
 
-	// Create the domain entity
-	employee := domain.NewEmployee(
+	employee := user.NewEmployee(
 		uuid.New().String(),
 		cmd.FirstName,
 		cmd.LastName,
@@ -45,11 +44,12 @@ func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*domain.Emplo
 		true,
 	)
 
-	// Save it through repository
-	createdEmployee, err := h.Repo.Save(employee)
+	createdUser, err := h.Repo.Save(employee)
 	if err != nil {
 		return nil, err
 	}
+
+	createdEmployee := domain.MapUserToEmployee(createdUser)
 
 	return createdEmployee, nil
 }
