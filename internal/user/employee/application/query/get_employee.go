@@ -1,6 +1,8 @@
 package query
 
-import "time-management/internal/employee/domain"
+import (
+	"time-management/internal/user/employee/domain"
+)
 
 type GetEmployeeQuery struct {
 	Id string
@@ -11,10 +13,12 @@ type GetEmployeeHandler struct {
 }
 
 func (h *GetEmployeeHandler) Handle(query GetEmployeeQuery) (*domain.Employee, error) {
-	employee, err := h.Repo.GetById(query.Id)
+	user, err := h.Repo.GetById(query.Id)
 	if err != nil {
 		return nil, err
 	}
+
+	employee := domain.MapUserToEmployee(user)
 
 	return employee, nil
 }

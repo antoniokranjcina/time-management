@@ -3,10 +3,10 @@ package internal
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	empHttp "time-management/internal/employee/interface/http"
 	locHttp "time-management/internal/location/interface/http"
 	repHttp "time-management/internal/report/interface/http"
 	"time-management/internal/shared/util"
+	empHttp "time-management/internal/user/employee/interface/http"
 )
 
 func SetupRoutes(

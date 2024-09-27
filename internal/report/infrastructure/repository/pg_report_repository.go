@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	employeePg "time-management/internal/employee/infrastructure/repository"
 	locationPg "time-management/internal/location/infrastructure/repository"
 	"time-management/internal/report/domain"
 	"time-management/internal/shared/util"
+	userPg "time-management/internal/user"
 )
 
 const tableName = "reports"
@@ -31,13 +31,13 @@ func (r *PgReportRepository) createLocationTable() error {
 	query := fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %s (
 			id VARCHAR(50) PRIMARY KEY,
-			employee_id VARCHAR(50) REFERENCES employees(id) ON DELETE CASCADE,
-			location_id VARCHAR(50) REFERENCES locations(id) ON DELETE CASCADE,
+			user_id VARCHAR(50) REFERENCES %s(id) ON DELETE CASCADE,
+			location_id VARCHAR(50) REFERENCES %s(id) ON DELETE CASCADE,
 			working_hours serial,
 			maintenance_hours serial,
 			status serial,
 			created_at serial
-		)`, tableName)
+		)`, tableName, userPg.TableName, locationPg.TableName)
 
 	_, err := r.DB.Exec(query)
 	return err
@@ -49,7 +49,7 @@ func (r *PgReportRepository) Create(report *domain.Report) (*domain.Report, erro
 	errorChan := make(chan error)
 
 	go func() {
-		exists, err := r.checkIfRecordExists(report.Employee.Id, employeePg.TableName)
+		exists, err := r.checkIfRecordExists(report.Employee.Id, userPg.TableName)
 		if err != nil {
 			errorChan <- err
 			return
@@ -286,7 +286,7 @@ func (r *PgReportRepository) getFullReportByIdAndStatus(reportId string, status 
 		JOIN %s e ON r.employee_id = e.id
 		JOIN %s l ON r.location_id = l.id
 		WHERE r.id = $1 AND r.status = $2
-	`, tableName, employeePg.TableName, locationPg.TableName)
+	`, tableName, userPg.TableName, locationPg.TableName)
 
 	row := r.DB.QueryRow(query, reportId, status)
 
@@ -308,7 +308,7 @@ func (r *PgReportRepository) getReportsByStatus(status uint64) ([]domain.Report,
 		JOIN %s e ON r.employee_id = e.id
 		JOIN %s l ON r.location_id = l.id
 		WHERE r.status = %d;
-	`, tableName, employeePg.TableName, locationPg.TableName, status)
+	`, tableName, userPg.TableName, locationPg.TableName, status)
 
 	rows, err := r.DB.Query(query)
 	if err != nil {
