@@ -3,7 +3,7 @@ package command
 import (
 	"net/mail"
 	sharedUtil "time-management/internal/shared/util"
-	"time-management/internal/user/employee/domain"
+	"time-management/internal/user/domain"
 )
 
 type UpdateEmailCommand struct {
@@ -12,7 +12,7 @@ type UpdateEmailCommand struct {
 }
 
 type UpdateEmailHandler struct {
-	Repo domain.EmployeeRepository
+	Repo domain.UserRepository
 }
 
 func (h *UpdateEmailHandler) Handle(cmd UpdateEmailCommand) error {

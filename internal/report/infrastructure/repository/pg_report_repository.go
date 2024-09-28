@@ -7,7 +7,7 @@ import (
 	locationPg "time-management/internal/location/infrastructure/repository"
 	"time-management/internal/report/domain"
 	"time-management/internal/shared/util"
-	userPg "time-management/internal/user"
+	userPg "time-management/internal/user/infrastructure/repository"
 )
 
 const tableName = "reports"

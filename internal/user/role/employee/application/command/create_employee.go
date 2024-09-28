@@ -5,8 +5,8 @@ import (
 	"net/mail"
 	"time"
 	sharedUtil "time-management/internal/shared/util"
-	"time-management/internal/user"
-	"time-management/internal/user/employee/domain"
+	"time-management/internal/user/domain"
+	empDomain "time-management/internal/user/role/employee/domain"
 )
 
 type CreateEmployeeCommand struct {
@@ -17,10 +17,10 @@ type CreateEmployeeCommand struct {
 }
 
 type CreateEmployeeHandler struct {
-	Repo domain.EmployeeRepository
+	Repo domain.UserRepository
 }
 
-func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*domain.Employee, error) {
+func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*empDomain.Employee, error) {
 	if cmd.FirstName == "" {
 		return nil, sharedUtil.NewValidationError(domain.ErrFirstNameTooShort)
 	}
@@ -34,7 +34,7 @@ func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*domain.Emplo
 		return nil, sharedUtil.NewValidationError(domain.ErrPasswordTooShort)
 	}
 
-	employee := user.NewEmployee(
+	employee := domain.NewEmployee(
 		uuid.New().String(),
 		cmd.FirstName,
 		cmd.LastName,
@@ -49,7 +49,7 @@ func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*domain.Emplo
 		return nil, err
 	}
 
-	createdEmployee := domain.MapUserToEmployee(createdUser)
+	createdEmployee := empDomain.MapUserToEmployee(createdUser)
 
 	return createdEmployee, nil
 }

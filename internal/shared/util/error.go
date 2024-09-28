@@ -3,9 +3,8 @@ package util
 import (
 	"errors"
 	"net/http"
+	"time-management/internal/user/domain"
 )
-
-var ErrInternalServer = errors.New("there is an error, try again later")
 
 // ValidationError Custom error type for validation errors
 type ValidationError struct {
@@ -27,6 +26,5 @@ func HandleError(w http.ResponseWriter, err error, statusCode int) error {
 		return WriteJson(w, statusCode, ApiError{Error: validationErr.Error()})
 	}
 
-	return WriteJson(w, http.StatusInternalServerError, ApiError{Error: err.Error()})
-	//return WriteJson(w, http.StatusInternalServerError, ApiError{Error: ErrInternalServer.Error()})
+	return WriteJson(w, http.StatusInternalServerError, ApiError{Error: domain.ErrInternalServer.Error()})
 }

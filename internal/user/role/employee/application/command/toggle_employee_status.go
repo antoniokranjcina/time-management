@@ -1,7 +1,7 @@
 package command
 
 import (
-	"time-management/internal/user/employee/domain"
+	"time-management/internal/user/domain"
 )
 
 type ToggleStatusCommand struct {
@@ -10,7 +10,7 @@ type ToggleStatusCommand struct {
 }
 
 type ToggleStatusHandler struct {
-	Repo domain.EmployeeRepository
+	Repo domain.UserRepository
 }
 
 func (h *ToggleStatusHandler) Handle(cmd ToggleStatusCommand) (bool, error) {

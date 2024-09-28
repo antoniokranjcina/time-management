@@ -1,6 +1,4 @@
-package user
-
-const TableName = "users"
+package domain
 
 type User struct {
 	Id           string `json:"id"`

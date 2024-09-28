@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"time-management/internal/location/application/command"
 	"time-management/internal/location/application/query"
-	"time-management/internal/location/domain"
+	locDomain "time-management/internal/location/domain"
 	"time-management/internal/shared/util"
+	"time-management/internal/user/domain"
 )
 
 type LocationHandler struct {
@@ -18,7 +19,7 @@ type LocationHandler struct {
 	DeleteLocationHandler command.DeleteLocationHandler
 }
 
-func NewLocationHandler(repository domain.LocationRepository) *LocationHandler {
+func NewLocationHandler(repository locDomain.LocationRepository) *LocationHandler {
 	return &LocationHandler{
 		CreateLocationHandler: command.CreateLocationHandler{Repo: repository},
 		GetLocationsHandler:   query.GetLocationsHandler{Repo: repository},
@@ -47,7 +48,7 @@ func (h *LocationHandler) CreateLocation(w http.ResponseWriter, r *http.Request)
 func (h *LocationHandler) GetLocations(w http.ResponseWriter, r *http.Request) error {
 	locations, err := h.GetLocationsHandler.Handle()
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, locations)
@@ -88,7 +89,7 @@ func (h *LocationHandler) DeleteLocation(w http.ResponseWriter, r *http.Request)
 
 	err := h.DeleteLocationHandler.Handle(command.DeleteLocationCommand{Id: id})
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusNoContent, nil)

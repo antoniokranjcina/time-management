@@ -6,11 +6,13 @@ import (
 	locHttp "time-management/internal/location/interface/http"
 	repHttp "time-management/internal/report/interface/http"
 	"time-management/internal/shared/util"
-	empHttp "time-management/internal/user/employee/interface/http"
+	adminHttp "time-management/internal/user/role/admin/interface/http"
+	empHttp "time-management/internal/user/role/employee/interface/http"
 )
 
 func SetupRoutes(
 	locationHandler *locHttp.LocationHandler,
+	adminHandler *adminHttp.AdminHandler,
 	employeeHandler *empHttp.EmployeeHandler,
 	reportHandler *repHttp.ReportHandler,
 ) *chi.Mux {
@@ -34,6 +36,14 @@ func SetupRoutes(
 		r.Patch("/{id}/email", util.HttpHandler(employeeHandler.ChangeEmail))
 		r.Patch("/{id}/status", util.HttpHandler(employeeHandler.ToggleEmployeeStatus))
 		r.Delete("/{id}", util.HttpHandler(employeeHandler.DeleteEmployee))
+	})
+
+	r.Route("/admins", func(r chi.Router) {
+		r.Post("/", util.HttpHandler(adminHandler.CreateAdmin))
+		r.Get("/", util.HttpHandler(adminHandler.GetAdmins))
+		r.Get("/{id}", util.HttpHandler(adminHandler.GetAdminById))
+		r.Put("/{id}", util.HttpHandler(adminHandler.UpdateAdmin))
+		r.Delete("/{id}", util.HttpHandler(adminHandler.DeleteAdmin))
 	})
 
 	r.Route("/reports", func(r chi.Router) {

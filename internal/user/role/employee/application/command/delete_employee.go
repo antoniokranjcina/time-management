@@ -1,7 +1,7 @@
 package command
 
 import (
-	"time-management/internal/user/employee/domain"
+	"time-management/internal/user/domain"
 )
 
 type DeleteEmployeeCommand struct {
@@ -9,7 +9,7 @@ type DeleteEmployeeCommand struct {
 }
 
 type DeleteEmployeeHandler struct {
-	Repo domain.EmployeeRepository
+	Repo domain.UserRepository
 }
 
 func (h *DeleteEmployeeHandler) Handle(cmd DeleteEmployeeCommand) error {
