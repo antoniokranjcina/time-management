@@ -2,20 +2,20 @@ package command
 
 import (
 	sharedUtil "time-management/internal/shared/util"
-	"time-management/internal/user/employee/domain"
+	"time-management/internal/user/domain"
+	adminDomain "time-management/internal/user/role/admin/domain"
 )
 
-type UpdateEmployeeCommand struct {
+type UpdateAdminCommand struct {
 	Id        string
 	FirstName string
 	LastName  string
 }
-
-type UpdateEmployeeHandler struct {
-	Repo domain.EmployeeRepository
+type UpdateAdminHandler struct {
+	Repo domain.UserRepository
 }
 
-func (h *UpdateEmployeeHandler) Handle(cmd UpdateEmployeeCommand) (*domain.Employee, error) {
+func (h *UpdateAdminHandler) Handle(cmd UpdateAdminCommand) (*adminDomain.Admin, error) {
 	if cmd.FirstName == "" {
 		return nil, sharedUtil.NewValidationError(domain.ErrFirstNameTooShort)
 	}
@@ -28,7 +28,7 @@ func (h *UpdateEmployeeHandler) Handle(cmd UpdateEmployeeCommand) (*domain.Emplo
 		return nil, err
 	}
 
-	updatedEmployee := domain.MapUserToEmployee(updatedUser)
+	updatedAdmin := adminDomain.MapUserToAdmin(updatedUser)
 
-	return updatedEmployee, nil
+	return updatedAdmin, nil
 }

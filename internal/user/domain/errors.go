@@ -8,5 +8,6 @@ var (
 	ErrEmailTaken        = errors.New("email already taken")
 	ErrEmailWrongFormat  = errors.New("email has wrong format")
 	ErrPasswordTooShort  = errors.New("password is too short")
-	ErrEmployeeNotFound  = errors.New("employee not found")
+	ErrUserNotFound      = errors.New("user not found")
+	ErrInternalServer    = errors.New("there is an error, try again later")
 )

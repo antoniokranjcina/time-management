@@ -5,32 +5,32 @@ import (
 	"github.com/go-chi/chi/v5"
 	"net/http"
 	"time-management/internal/shared/util"
-	"time-management/internal/user/employee/application/command"
-	"time-management/internal/user/employee/application/query"
-	"time-management/internal/user/employee/domain"
+	"time-management/internal/user/domain"
+	"time-management/internal/user/role/employee/application/command"
+	"time-management/internal/user/role/employee/application/query"
 )
 
 type EmployeeHandler struct {
 	CreateEmployeeHandler command.CreateEmployeeHandler
-	DeleteEmployeeHandler command.DeleteEmployeeHandler
+	GetEmployeesHandler   query.GetEmployeesHandler
+	GetEmployeeHandler    query.GetEmployeeHandler
 	UpdateEmailHandler    command.UpdateEmailHandler
 	UpdateEmployeeHandler command.UpdateEmployeeHandler
 	UpdatePasswordHandler command.UpdatePasswordHandler
 	ToggleStatusHandler   command.ToggleStatusHandler
-	GetEmployeesHandler   query.GetEmployeesHandler
-	GetEmployeeHandler    query.GetEmployeeHandler
+	DeleteEmployeeHandler command.DeleteEmployeeHandler
 }
 
-func NewEmployeeHandler(repository domain.EmployeeRepository) *EmployeeHandler {
+func NewEmployeeHandler(repository domain.UserRepository) *EmployeeHandler {
 	return &EmployeeHandler{
 		CreateEmployeeHandler: command.CreateEmployeeHandler{Repo: repository},
-		DeleteEmployeeHandler: command.DeleteEmployeeHandler{Repo: repository},
+		GetEmployeesHandler:   query.GetEmployeesHandler{Repo: repository},
+		GetEmployeeHandler:    query.GetEmployeeHandler{Repo: repository},
 		UpdateEmailHandler:    command.UpdateEmailHandler{Repo: repository},
 		UpdateEmployeeHandler: command.UpdateEmployeeHandler{Repo: repository},
 		UpdatePasswordHandler: command.UpdatePasswordHandler{Repo: repository},
 		ToggleStatusHandler:   command.ToggleStatusHandler{Repo: repository},
-		GetEmployeesHandler:   query.GetEmployeesHandler{Repo: repository},
-		GetEmployeeHandler:    query.GetEmployeeHandler{Repo: repository},
+		DeleteEmployeeHandler: command.DeleteEmployeeHandler{Repo: repository},
 	}
 }
 
@@ -61,7 +61,7 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) error {
 	employees, err := h.GetEmployeesHandler.Handle()
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, employees)
@@ -154,7 +154,7 @@ func (h *EmployeeHandler) ToggleEmployeeStatus(w http.ResponseWriter, r *http.Re
 		Active: req.Active,
 	})
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, status)
@@ -165,7 +165,7 @@ func (h *EmployeeHandler) DeleteEmployee(w http.ResponseWriter, r *http.Request)
 
 	err := h.DeleteEmployeeHandler.Handle(command.DeleteEmployeeCommand{Id: id})
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusNoContent, nil)

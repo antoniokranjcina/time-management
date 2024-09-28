@@ -1,6 +1,8 @@
 package domain
 
-import "time-management/internal/user"
+import (
+	"time-management/internal/user/domain"
+)
 
 type Employee struct {
 	Id        string `json:"id"`
@@ -11,7 +13,7 @@ type Employee struct {
 	Active    bool   `json:"active"`
 }
 
-func MapUserToEmployee(user *user.User) *Employee {
+func MapUserToEmployee(user *domain.User) *Employee {
 	return &Employee{
 		Id:        user.Id,
 		FirstName: user.FirstName,

@@ -1,11 +1,12 @@
-package user
+package repository
 
 import (
 	"database/sql"
+	"time-management/internal/user/domain"
 )
 
-func ScanUserRow(row *sql.Row) (*User, error) {
-	user := &User{}
+func ScanUserRow(row *sql.Row) (*domain.User, error) {
+	user := &domain.User{}
 	err := row.Scan(
 		&user.Id,
 		&user.FirstName,
@@ -23,11 +24,11 @@ func ScanUserRow(row *sql.Row) (*User, error) {
 	return user, nil
 }
 
-func ScanUserRows(rows *sql.Rows) ([]User, error) {
-	var users []User
+func ScanUserRows(rows *sql.Rows) ([]domain.User, error) {
+	var users []domain.User
 
 	for rows.Next() {
-		var user User
+		var user domain.User
 		err := rows.Scan(
 			&user.Id,
 			&user.FirstName,

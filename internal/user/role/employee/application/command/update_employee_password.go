@@ -2,7 +2,7 @@ package command
 
 import (
 	sharedUtil "time-management/internal/shared/util"
-	"time-management/internal/user/employee/domain"
+	"time-management/internal/user/domain"
 )
 
 type UpdatePasswordCommand struct {
@@ -11,7 +11,7 @@ type UpdatePasswordCommand struct {
 }
 
 type UpdatePasswordHandler struct {
-	Repo domain.EmployeeRepository
+	Repo domain.UserRepository
 }
 
 func (h *UpdatePasswordHandler) Handle(cmd UpdatePasswordCommand) error {

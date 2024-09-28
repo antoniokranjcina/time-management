@@ -8,6 +8,7 @@ import (
 	"time-management/internal/report/application/query"
 	"time-management/internal/report/infrastructure/repository"
 	"time-management/internal/shared/util"
+	"time-management/internal/user/domain"
 )
 
 type ReportHandler struct {
@@ -71,7 +72,7 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) err
 func (h *ReportHandler) GetReports(w http.ResponseWriter, r *http.Request) error {
 	reports, err := h.GetReportsHandler.Handle()
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, reports)
@@ -80,7 +81,7 @@ func (h *ReportHandler) GetReports(w http.ResponseWriter, r *http.Request) error
 func (h *ReportHandler) GetPendingReports(w http.ResponseWriter, r *http.Request) error {
 	reports, err := h.GetPendingReportsHandler.Handle()
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, reports)
@@ -89,7 +90,7 @@ func (h *ReportHandler) GetPendingReports(w http.ResponseWriter, r *http.Request
 func (h *ReportHandler) GetDeniedReports(w http.ResponseWriter, r *http.Request) error {
 	reports, err := h.GetDeniedReportsHandler.Handle()
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, reports)
@@ -162,7 +163,7 @@ func (h *ReportHandler) ApproveReport(w http.ResponseWriter, r *http.Request) er
 
 	err := h.ApproveReportHandler.Handle(command.ApproveReportCommand{Id: id})
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, nil)
@@ -173,7 +174,7 @@ func (h *ReportHandler) DenyReport(w http.ResponseWriter, r *http.Request) error
 
 	err := h.DenyReportHandler.Handle(command.DenyReportCommand{Id: id})
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, nil)
@@ -184,7 +185,7 @@ func (h *ReportHandler) DeleteReport(w http.ResponseWriter, r *http.Request) err
 
 	err := h.DeleteReportHandler.Handle(command.DeleteReport{Id: id})
 	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: util.ErrInternalServer.Error()})
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
 	return util.WriteJson(w, http.StatusOK, nil)

@@ -12,8 +12,9 @@ import (
 	locHttp "time-management/internal/location/interface/http"
 	repRepo "time-management/internal/report/infrastructure/repository"
 	repHttp "time-management/internal/report/interface/http"
-	empRepo "time-management/internal/user/employee/infrastructure/repository"
-	empHttp "time-management/internal/user/employee/interface/http"
+	userRepo "time-management/internal/user/infrastructure/repository"
+	adminHttp "time-management/internal/user/role/admin/interface/http"
+	empHttp "time-management/internal/user/role/employee/interface/http"
 )
 
 type Server struct {
@@ -36,18 +37,19 @@ func NewServer() *http.Server {
 
 	// Initialize repositories
 	locationRepository := locRepo.NewPgLocationRepository(db)
-	employeeRepository := empRepo.NewPgEmployeeRepository(db)
+	userRepository := userRepo.NewPgUsersRepository(db)
 	reportRepository := repRepo.NewPgReportRepository(db)
 
 	// Initialize handlers
 	locationHandler := locHttp.NewLocationHandler(locationRepository)
-	employeeHandler := empHttp.NewEmployeeHandler(employeeRepository)
+	adminHandler := adminHttp.NewAdminHandler(userRepository)
+	employeeHandler := empHttp.NewEmployeeHandler(userRepository)
 	reportHandler := repHttp.NewReportHandler(reportRepository)
 
 	// Declare Server config
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      SetupRoutes(locationHandler, employeeHandler, reportHandler),
+		Handler:      SetupRoutes(locationHandler, adminHandler, employeeHandler, reportHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
