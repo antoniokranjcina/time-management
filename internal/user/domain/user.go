@@ -1,5 +1,7 @@
 package domain
 
+import "time-management/internal/user/role"
+
 type User struct {
 	Id           string `json:"id"`
 	FirstName    string `json:"first_name"`
@@ -18,21 +20,21 @@ func NewAdmin(id, firstName, lastName, email, password string, createdAt uint64,
 		FirstName:    firstName,
 		LastName:     lastName,
 		Email:        email,
-		Role:         "admin",
+		Role:         role.Admin.String(),
 		PasswordHash: password,
 		CreatedAt:    createdAt,
 		Active:       active,
 	}
 }
 
-// NewModerator Factory method to create a Moderator
-func NewModerator(id, firstName, lastName, email, password string, createdAt uint64, active bool) *User {
+// NewManager Factory method to create a Moderator
+func NewManager(id, firstName, lastName, email, password string, createdAt uint64, active bool) *User {
 	return &User{
 		Id:           id,
 		FirstName:    firstName,
 		LastName:     lastName,
 		Email:        email,
-		Role:         "moderator",
+		Role:         role.Manager.String(),
 		PasswordHash: password,
 		CreatedAt:    createdAt,
 		Active:       active,
@@ -46,7 +48,7 @@ func NewEmployee(id, firstName, lastName, email, password string, createdAt uint
 		FirstName:    firstName,
 		LastName:     lastName,
 		Email:        email,
-		Role:         "employee",
+		Role:         role.Employee.String(),
 		PasswordHash: password,
 		CreatedAt:    createdAt,
 		Active:       active,
