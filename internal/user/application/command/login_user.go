@@ -10,6 +10,11 @@ import (
 	"time-management/internal/user/domain"
 )
 
+const JwtId = "id"
+const JwtRole = "role"
+const JwtExp = "exp"
+const JwtExpirationTime = time.Hour * 24
+
 type LoginUserCommand struct {
 	Email    string
 	Password string
@@ -35,9 +40,9 @@ func (h *LoginUserHandler) Handle(cmd LoginUserCommand) (*string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":   user.Id,
-		"role": user.Role,
-		"exp":  time.Now().Add(time.Hour * 24).Unix(),
+		JwtId:   user.Id,
+		JwtRole: user.Role,
+		JwtExp:  time.Now().Add(JwtExpirationTime).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))

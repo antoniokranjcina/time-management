@@ -2,37 +2,38 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"os"
 	"time"
 	"time-management/internal/shared/util"
+	"time-management/internal/user/application/command"
 	"time-management/internal/user/domain"
+	userHttp "time-management/internal/user/interface/http"
 )
 
 var jwtSecretKey = []byte(os.Getenv("JWT_SECRET"))
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("auth_token") // Ensure the cookie name is correct
+		cookie, err := r.Cookie(userHttp.CookieAuthName)
 		if err != nil {
-			_ = util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: "Unauthorized: no valid token"})
+			_ = util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: ErrNoValidToken.Error()})
 			return
 		}
 
 		// Validate the token from the cookie
 		claims, err := validateToken(cookie.Value)
 		if err != nil {
-			_ = util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: "Unauthorized: invalid token"})
+			_ = util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: ErrInvalidToken.Error()})
 			return
 		}
 
 		// Add the extracted user to the context
 		user := &domain.User{
-			Id:   claims["id"].(string),
-			Role: claims["role"].(string),
+			Id:   claims[command.JwtId].(string),
+			Role: claims[command.JwtRole].(string),
 		}
 
 		// Add user to the context
@@ -49,7 +50,7 @@ func validateToken(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Ensure token uses HMAC for signing
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			return nil, ErrUnExpectedSigningMethod
 		}
 
 		// Return the secret key for validating the token's signature
@@ -76,16 +77,16 @@ func validateToken(tokenString string) (jwt.MapClaims, error) {
 	}
 
 	// If the token is invalid
-	return nil, errors.New("invalid token")
+	return nil, ErrInvalidToken
 }
 
 // validateClaims checks token claims such as expiration
 func validateClaims(claims jwt.MapClaims) error {
 	// Check if the token is expired
-	if exp, ok := claims["exp"].(float64); ok {
+	if exp, ok := claims[command.JwtExp].(float64); ok {
 		expirationTime := time.Unix(int64(exp), 0)
 		if time.Now().After(expirationTime) {
-			return errors.New("token is expired")
+			return ErrTokenExpired
 		}
 	}
 

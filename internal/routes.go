@@ -29,41 +29,70 @@ func SetupRoutes(
 
 	r.With(appMiddleware.AuthMiddleware).Group(func(r chi.Router) {
 		r.Route("/locations", func(r chi.Router) {
-			r.With(Role(role.Manager)).Post("/", util.HttpHandler(locationHandler.CreateLocation))
-			r.With(Role(role.Manager, role.Employee)).Get("/", util.HttpHandler(locationHandler.GetLocations))
-			r.With(Role(role.Manager, role.Employee)).Get("/{id}", util.HttpHandler(locationHandler.GetLocation))
-			r.With(Role(role.Manager)).Put("/{id}", util.HttpHandler(locationHandler.UpdateLocation))
-			r.With(Role()).Delete("/{id}", util.HttpHandler(locationHandler.DeleteLocation))
+			r.With(Role(role.Manager)).
+				Post("/", util.HttpHandler(locationHandler.CreateLocation))
+			r.With(Role(role.Manager, role.Employee)).
+				Get("/", util.HttpHandler(locationHandler.GetLocations))
+			r.With(Role(role.Manager, role.Employee)).
+				Get("/{id}", util.HttpHandler(locationHandler.GetLocation))
+			r.With(Role(role.Manager)).
+				Put("/{id}", util.HttpHandler(locationHandler.UpdateLocation))
+			r.With(Role()).
+				Delete("/{id}", util.HttpHandler(locationHandler.DeleteLocation))
 		})
 		r.Route("/employees", func(r chi.Router) {
-			r.With(Role(role.Manager)).Post("/", util.HttpHandler(employeeHandler.CreateEmployee))
-			r.With(Role(role.Manager)).Get("/", util.HttpHandler(employeeHandler.GetEmployees))
-			r.With(Role(role.Manager)).Get("/{id}", util.HttpHandler(employeeHandler.GetEmployee))
-			r.With(Role()).Put("/{id}", util.HttpHandler(employeeHandler.UpdateEmployee))
-			r.With(Role()).Patch("/{id}/password", util.HttpHandler(employeeHandler.ChangePassword))
-			r.With(Role()).Patch("/{id}/email", util.HttpHandler(employeeHandler.ChangeEmail))
-			r.With(Role(role.Manager)).Patch("/{id}/status", util.HttpHandler(employeeHandler.ToggleEmployeeStatus))
-			r.With(Role()).Delete("/{id}", util.HttpHandler(employeeHandler.DeleteEmployee))
+			r.With(Role(role.Manager)).
+				Post("/", util.HttpHandler(employeeHandler.CreateEmployee))
+			r.With(Role(role.Manager)).
+				Get("/", util.HttpHandler(employeeHandler.GetEmployees))
+			r.With(Role(role.Manager)).
+				Get("/{id}", util.HttpHandler(employeeHandler.GetEmployee))
+			r.With(Role()).
+				Put("/{id}", util.HttpHandler(employeeHandler.UpdateEmployee))
+			r.With(Role()).
+				Patch("/{id}/password", util.HttpHandler(employeeHandler.ChangePassword))
+			r.With(Role()).
+				Patch("/{id}/email", util.HttpHandler(employeeHandler.ChangeEmail))
+			r.With(Role(role.Manager)).
+				Patch("/{id}/status", util.HttpHandler(employeeHandler.ToggleEmployeeStatus))
+			r.With(Role()).
+				Delete("/{id}", util.HttpHandler(employeeHandler.DeleteEmployee))
 		})
 		r.Route("/admins", func(r chi.Router) {
-			r.With(Role()).Post("/", util.HttpHandler(adminHandler.CreateAdmin))
-			r.With(Role()).Get("/", util.HttpHandler(adminHandler.GetAdmins))
-			r.With(Role()).Get("/{id}", util.HttpHandler(adminHandler.GetAdminById))
-			r.With(Role()).Put("/{id}", util.HttpHandler(adminHandler.UpdateAdmin))
-			r.With(Role()).Delete("/{id}", util.HttpHandler(adminHandler.DeleteAdmin))
+			r.With(Role()).
+				Post("/", util.HttpHandler(adminHandler.CreateAdmin))
+			r.With(Role()).
+				Get("/", util.HttpHandler(adminHandler.GetAdmins))
+			r.With(Role()).
+				Get("/{id}", util.HttpHandler(adminHandler.GetAdminById))
+			r.With(Role()).
+				Put("/{id}", util.HttpHandler(adminHandler.UpdateAdmin))
+			r.With(Role()).
+				Delete("/{id}", util.HttpHandler(adminHandler.DeleteAdmin))
 		})
 		r.Route("/reports", func(r chi.Router) {
-			r.With(Role(role.Employee)).Post("/", util.HttpHandler(reportHandler.CreateReport))
-			r.With(Role(role.Manager)).Get("/", util.HttpHandler(reportHandler.GetReports))
-			r.With(Role(role.Manager)).Get("/{id}", util.HttpHandler(reportHandler.GetReport))
-			r.With(Role(role.Employee, role.Manager)).Get("/pending", util.HttpHandler(reportHandler.GetPendingReports))
-			r.With(Role(role.Employee, role.Manager)).Get("/pending/{id}", util.HttpHandler(reportHandler.GetPendingReport))
-			r.With(Role(role.Employee, role.Manager)).Put("/pending/{id}", util.HttpHandler(reportHandler.UpdatePendingReport))
-			r.With(Role(role.Manager)).Get("/denied", util.HttpHandler(reportHandler.GetDeniedReports))
-			r.With(Role(role.Manager)).Get("/denied/{id}", util.HttpHandler(reportHandler.GetDeniedReport))
-			r.With(Role(role.Manager)).Patch("/{id}/approve", util.HttpHandler(reportHandler.ApproveReport))
-			r.With(Role(role.Manager)).Patch("/{id}/deny", util.HttpHandler(reportHandler.DenyReport))
-			r.With(Role()).Delete("/{id}", util.HttpHandler(reportHandler.DeleteReport))
+			r.With(Role(role.Employee)).
+				Post("/", util.HttpHandler(reportHandler.CreateReport))
+			r.With(Role(role.Manager)).
+				Get("/", util.HttpHandler(reportHandler.GetReports))
+			r.With(Role(role.Manager)).
+				Get("/{id}", util.HttpHandler(reportHandler.GetReport))
+			r.With(Role(role.Employee, role.Manager)).
+				Get("/pending", util.HttpHandler(reportHandler.GetPendingReports))
+			r.With(Role(role.Employee, role.Manager)).
+				Get("/pending/{id}", util.HttpHandler(reportHandler.GetPendingReport))
+			r.With(Role(role.Employee, role.Manager)).
+				Put("/pending/{id}", util.HttpHandler(reportHandler.UpdatePendingReport))
+			r.With(Role(role.Manager)).
+				Get("/denied", util.HttpHandler(reportHandler.GetDeniedReports))
+			r.With(Role(role.Manager)).
+				Get("/denied/{id}", util.HttpHandler(reportHandler.GetDeniedReport))
+			r.With(Role(role.Manager)).
+				Patch("/{id}/approve", util.HttpHandler(reportHandler.ApproveReport))
+			r.With(Role(role.Manager)).
+				Patch("/{id}/deny", util.HttpHandler(reportHandler.DenyReport))
+			r.With(Role()).
+				Delete("/{id}", util.HttpHandler(reportHandler.DeleteReport))
 		})
 	})
 

@@ -9,6 +9,8 @@ import (
 	"time-management/internal/user/domain"
 )
 
+const CookieAuthName = "auth_token"
+
 type UserHandler struct {
 	LoginUserHandler userCommand.LoginUserHandler
 }
@@ -38,12 +40,12 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
+		Name:     CookieAuthName,
 		Value:    *token,
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
-		Expires:  time.Now().Add(24 * time.Hour),
+		Expires:  time.Now().Add(userCommand.JwtExpirationTime),
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -52,12 +54,12 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) error {
 
 func (h *UserHandler) LogoutUser(w http.ResponseWriter, r *http.Request) error {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
+		Name:     CookieAuthName,
 		Value:    "",
 		HttpOnly: true,
 		Secure:   true,
 		Path:     "/",
-		Expires:  time.Now().Add(-24 * time.Hour),
+		Expires:  time.Now().Add(-userCommand.JwtExpirationTime),
 		SameSite: http.SameSiteStrictMode,
 	})
 
