@@ -2,6 +2,7 @@ package query
 
 import (
 	"time-management/internal/user/domain"
+	"time-management/internal/user/role"
 	empDomain "time-management/internal/user/role/employee/domain"
 )
 
@@ -10,7 +11,7 @@ type GetEmployeesHandler struct {
 }
 
 func (h *GetEmployeesHandler) Handle() ([]empDomain.Employee, error) {
-	users, err := h.Repo.GetAllWithRole("employee")
+	users, err := h.Repo.GetAllWithRole(role.Employee.String())
 	if err != nil {
 		return nil, err
 	}

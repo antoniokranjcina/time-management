@@ -4,8 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+	"os"
+	"time"
 	"time-management/internal/shared/util"
 	"time-management/internal/user/domain"
+	"time-management/internal/user/role"
 )
 
 const TableName = "users"
@@ -39,14 +44,69 @@ func (r *PgUserRepository) createUsersTable() error {
 	)`, TableName)
 
 	_, err := r.DB.Exec(query)
+
+	err = r.createSuperAdmin()
+
 	return err
+}
+
+func (r *PgUserRepository) createSuperAdmin() error {
+	// First, check if a super-admin already exists
+	checkQuery := fmt.Sprintf(`SELECT id FROM %s WHERE role = $1 LIMIT 1`, TableName)
+
+	var superAdminId string
+	err := r.DB.QueryRow(checkQuery, role.SuperAdmin.String()).Scan(&superAdminId)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) { // If there's an error that's not "no rows"
+		return fmt.Errorf("failed to check for existing super admin: %v", err)
+	}
+
+	// If super-admin already exists, return without doing anything
+	if superAdminId != "" {
+		fmt.Println("Super admin already exists. Skipping creation.")
+		return nil
+	}
+
+	// Otherwise, proceed with creating a new super-admin
+	query := fmt.Sprintf(`
+		INSERT INTO %s (id, first_name, last_name, email, role, password_hashed, created_at, active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+	`, TableName)
+
+	// Fetch email and password from environment variables
+	password := os.Getenv("SUPER_ADMIN_PASSWORD")
+	email := os.Getenv("SUPER_ADMIN_EMAIL")
+
+	// Hash the password
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		return domain.ErrFailedToHashPassword
+	}
+
+	// Insert the new super admin user
+	_, err = r.DB.Exec(
+		query,
+		uuid.New().String(),
+		"Super",
+		"Admin",
+		email,
+		role.SuperAdmin.String(),
+		string(hash),
+		uint64(time.Now().Unix()),
+		true,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create super admin: %v", err)
+	}
+
+	fmt.Println("Super admin created successfully")
+	return nil
 }
 
 func (r *PgUserRepository) Save(user *domain.User) (*domain.User, error) {
 	if exists, err := r.isEmailTaken(user.Email); err != nil {
 		return nil, err
 	} else if exists {
-		return nil, domain.ErrEmailTaken
+		return nil, util.NewValidationError(domain.ErrEmailTaken)
 	}
 
 	query := fmt.Sprintf(`
@@ -67,12 +127,12 @@ func (r *PgUserRepository) Save(user *domain.User) (*domain.User, error) {
 		user.Active,
 	)
 
-	savedEmployee, err := ScanUserRow(row)
+	savedUser, err := ScanUserRow(row)
 	if err != nil {
 		return nil, err
 	}
 
-	return savedEmployee, nil
+	return savedUser, nil
 }
 
 func (r *PgUserRepository) GetAllWithRole(role string) ([]domain.User, error) {
@@ -101,6 +161,18 @@ func (r *PgUserRepository) GetByIdWithRole(id, role string) (*domain.User, error
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, util.NewValidationError(domain.ErrUserNotFound)
 		}
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (r *PgUserRepository) GetByEmail(email string) (*domain.User, error) {
+	query := fmt.Sprintf(`SELECT * FROM %s WHERE email = $1`, TableName)
+
+	row := r.DB.QueryRow(query, email)
+	user, err := ScanUserRow(row)
+	if err != nil {
 		return nil, err
 	}
 

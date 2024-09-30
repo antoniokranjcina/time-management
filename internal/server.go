@@ -13,6 +13,7 @@ import (
 	repRepo "time-management/internal/report/infrastructure/repository"
 	repHttp "time-management/internal/report/interface/http"
 	userRepo "time-management/internal/user/infrastructure/repository"
+	userHttp "time-management/internal/user/interface/http"
 	adminHttp "time-management/internal/user/role/admin/interface/http"
 	empHttp "time-management/internal/user/role/employee/interface/http"
 )
@@ -42,6 +43,7 @@ func NewServer() *http.Server {
 
 	// Initialize handlers
 	locationHandler := locHttp.NewLocationHandler(locationRepository)
+	userHandler := userHttp.NewUserHandler(userRepository)
 	adminHandler := adminHttp.NewAdminHandler(userRepository)
 	employeeHandler := empHttp.NewEmployeeHandler(userRepository)
 	reportHandler := repHttp.NewReportHandler(reportRepository)
@@ -49,7 +51,7 @@ func NewServer() *http.Server {
 	// Declare Server config
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      SetupRoutes(locationHandler, adminHandler, employeeHandler, reportHandler),
+		Handler:      SetupRoutes(locationHandler, userHandler, adminHandler, employeeHandler, reportHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,

@@ -26,5 +26,6 @@ func HandleError(w http.ResponseWriter, err error, statusCode int) error {
 		return WriteJson(w, statusCode, ApiError{Error: validationErr.Error()})
 	}
 
+	//return WriteJson(w, http.StatusInternalServerError, ApiError{Error: err.Error()})
 	return WriteJson(w, http.StatusInternalServerError, ApiError{Error: domain.ErrInternalServer.Error()})
 }

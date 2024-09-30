@@ -49,7 +49,7 @@ func (h *AdminHandler) CreateAdmin(w http.ResponseWriter, r *http.Request) error
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
 
-	return util.WriteJson(w, http.StatusOK, admin)
+	return util.WriteJson(w, http.StatusCreated, admin)
 }
 
 func (h *AdminHandler) GetAdmins(w http.ResponseWriter, r *http.Request) error {

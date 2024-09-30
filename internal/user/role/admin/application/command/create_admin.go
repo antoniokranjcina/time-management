@@ -2,6 +2,7 @@ package command
 
 import (
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"net/mail"
 	"time"
 	sharedUtil "time-management/internal/shared/util"
@@ -34,12 +35,17 @@ func (h *CreateAdminHandler) Handle(cmd CreateAdminCommand) (*adminDomain.Admin,
 		return nil, sharedUtil.NewValidationError(domain.ErrPasswordTooShort)
 	}
 
+	hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), bcrypt.MinCost)
+	if err != nil {
+		return nil, domain.ErrInternalServer
+	}
+
 	admin := domain.NewAdmin(
 		uuid.New().String(),
 		cmd.FirstName,
 		cmd.LastName,
 		cmd.Email,
-		cmd.Password,
+		string(hash),
 		uint64(time.Now().Unix()),
 		true,
 	)
