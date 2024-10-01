@@ -102,6 +102,14 @@ func (h *EmployeeHandler) UpdateEmployee(w http.ResponseWriter, r *http.Request)
 
 func (h *EmployeeHandler) ChangePassword(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
+	if id == "" {
+		user, ok := r.Context().Value("user").(*domain.User)
+		if !ok || user == nil {
+			return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
+		}
+		id = user.Id
+	}
+
 	var req struct {
 		Password string `json:"password"`
 	}
@@ -122,6 +130,14 @@ func (h *EmployeeHandler) ChangePassword(w http.ResponseWriter, r *http.Request)
 
 func (h *EmployeeHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
+	if id == "" {
+		user, ok := r.Context().Value("user").(*domain.User)
+		if !ok || user == nil {
+			return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: "Unauthorized: unable to get user"})
+		}
+		id = user.Id
+	}
+
 	var req struct {
 		Email string `json:"email"`
 	}
