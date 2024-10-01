@@ -50,13 +50,13 @@ func SetupRoutes(
 			r.With(Role()).
 				Put("/{id}", util.HttpHandler(employeeHandler.UpdateEmployee))
 			r.Route("/password", func(r chi.Router) {
-				r.With().
+				r.With(Role()).
 					Patch("/{id}", util.HttpHandler(employeeHandler.ChangePassword))
 				r.With(Role(role.Employee)).
 					Patch("/", util.HttpHandler(employeeHandler.ChangePassword))
 			})
 			r.Route("/email", func(r chi.Router) {
-				r.With().
+				r.With(Role()).
 					Patch("/{id}", util.HttpHandler(employeeHandler.ChangeEmail))
 				r.With(Role(role.Employee)).
 					Patch("/", util.HttpHandler(employeeHandler.ChangeEmail))
