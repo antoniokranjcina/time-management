@@ -1,6 +1,7 @@
 package command
 
 import (
+	"golang.org/x/crypto/bcrypt"
 	sharedUtil "time-management/internal/shared/util"
 	"time-management/internal/user/domain"
 )
@@ -19,7 +20,12 @@ func (h *UpdatePasswordHandler) Handle(cmd UpdatePasswordCommand) error {
 		return sharedUtil.NewValidationError(domain.ErrPasswordTooShort)
 	}
 
-	err := h.Repo.ChangePassword(cmd.Id, cmd.Password)
+	hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), bcrypt.MinCost)
+	if err != nil {
+		return domain.ErrInternalServer
+	}
+
+	err = h.Repo.ChangePassword(cmd.Id, string(hash))
 	if err != nil {
 		return err
 	}
