@@ -1,18 +1,13 @@
 package domain
 
-// Report Status:
-// 0 - pending
-// 1 - approved
-// 2 - denied
-
 type Report struct {
-	Id               string   `json:"id"`
-	Employee         Employee `json:"employee"`
-	Location         Location `json:"location"`
-	WorkingHours     uint64   `json:"working_hours"`
-	MaintenanceHours uint64   `json:"maintenance_hours"`
-	Status           uint64   `json:"status"`
-	CreatedAt        uint64   `json:"created_at"`
+	Id               string       `json:"id"`
+	Employee         Employee     `json:"employee"`
+	Location         Location     `json:"location"`
+	WorkingHours     uint64       `json:"working_hours"`
+	MaintenanceHours uint64       `json:"maintenance_hours"`
+	Status           ReportStatus `json:"status"`
+	CreatedAt        uint64       `json:"created_at"`
 }
 
 type Employee struct {
@@ -33,7 +28,7 @@ func NewReport(
 	locationId string,
 	workingHours uint64,
 	maintenanceHours uint64,
-	status uint64,
+	status ReportStatus,
 	createdAt uint64,
 ) *Report {
 	return &Report{

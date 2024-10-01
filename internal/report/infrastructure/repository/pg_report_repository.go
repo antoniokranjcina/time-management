@@ -31,7 +31,7 @@ func (r *PgReportRepository) createLocationTable() error {
 	query := fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %s (
 			id VARCHAR(50) PRIMARY KEY,
-			user_id VARCHAR(50) REFERENCES %s(id) ON DELETE CASCADE,
+			employee_id VARCHAR(50) REFERENCES %s(id) ON DELETE CASCADE,
 			location_id VARCHAR(50) REFERENCES %s(id) ON DELETE CASCADE,
 			working_hours serial,
 			maintenance_hours serial,
@@ -115,19 +115,19 @@ func (r *PgReportRepository) Create(report *domain.Report) (*domain.Report, erro
 }
 
 func (r *PgReportRepository) GetAll() ([]domain.Report, error) {
-	return r.getReportsByStatus(1)
+	return r.getReportsByStatus(domain.Approved)
 }
 
 func (r *PgReportRepository) GetPendingAll() ([]domain.Report, error) {
-	return r.getReportsByStatus(0)
+	return r.getReportsByStatus(domain.Pending)
 }
 
 func (r *PgReportRepository) GetDeniedAll() ([]domain.Report, error) {
-	return r.getReportsByStatus(2)
+	return r.getReportsByStatus(domain.Denied)
 }
 
 func (r *PgReportRepository) GetById(id string) (*domain.Report, error) {
-	report, err := r.getFullReportByIdAndStatus(id, 1)
+	report, err := r.getFullReportByIdAndStatus(id, domain.Approved)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, util.NewValidationError(domain.ErrReportNotFound)
@@ -138,7 +138,7 @@ func (r *PgReportRepository) GetById(id string) (*domain.Report, error) {
 }
 
 func (r *PgReportRepository) GetPendingById(id string) (*domain.Report, error) {
-	report, err := r.getFullReportByIdAndStatus(id, 0)
+	report, err := r.getFullReportByIdAndStatus(id, domain.Pending)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, util.NewValidationError(domain.ErrPendingReportNotFound)
@@ -149,7 +149,7 @@ func (r *PgReportRepository) GetPendingById(id string) (*domain.Report, error) {
 }
 
 func (r *PgReportRepository) GetDeniedById(id string) (*domain.Report, error) {
-	report, err := r.getFullReportByIdAndStatus(id, 2)
+	report, err := r.getFullReportByIdAndStatus(id, domain.Denied)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, util.NewValidationError(domain.ErrDeniedReportNotFound)
@@ -160,7 +160,7 @@ func (r *PgReportRepository) GetDeniedById(id string) (*domain.Report, error) {
 }
 
 func (r *PgReportRepository) UpdatePending(id, locationId string, workingHours, maintenanceHours uint64) (*domain.Report, error) {
-	matches, err := r.checkIfReportMatchesStatus(id, 0)
+	matches, err := r.checkIfReportMatchesStatus(id, domain.Pending)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (r *PgReportRepository) UpdatePending(id, locationId string, workingHours, 
 		return nil, err
 	}
 
-	updateReport, err := r.getFullReportByIdAndStatus(updatedId, 0)
+	updateReport, err := r.getFullReportByIdAndStatus(updatedId, domain.Pending)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (r *PgReportRepository) UpdatePending(id, locationId string, workingHours, 
 func (r *PgReportRepository) Approve(id string) error {
 	query := fmt.Sprintf(`UPDATE %s SET status = $1 WHERE id = $2`, tableName)
 
-	_, err := r.DB.Exec(query, 1, id)
+	_, err := r.DB.Exec(query, domain.Approved, id)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (r *PgReportRepository) Approve(id string) error {
 func (r *PgReportRepository) Deny(id string) error {
 	query := fmt.Sprintf(`UPDATE %s SET status = $1 WHERE id = $2`, tableName)
 
-	_, err := r.DB.Exec(query, 2, id)
+	_, err := r.DB.Exec(query, domain.Denied, id)
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (r *PgReportRepository) checkIfRecordExists(id, table string) (bool, error)
 	return exists, nil
 }
 
-func (r *PgReportRepository) checkIfReportMatchesStatus(id string, status int) (bool, error) {
+func (r *PgReportRepository) checkIfReportMatchesStatus(id string, status domain.ReportStatus) (bool, error) {
 	query := fmt.Sprintf(`SELECT EXISTS(SELECT 1 FROM %s WHERE id = $1 AND status = $2)`, tableName)
 
 	var matches bool
@@ -254,19 +254,19 @@ func (r *PgReportRepository) checkIfReportMatchesStatus(id string, status int) (
 	return matches, nil
 }
 
-func (r *PgReportRepository) getFullReportById(reportId string) (*domain.Report, error) {
+func (r *PgReportRepository) getFullReportById(id string) (*domain.Report, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
 			e.id, e.first_name, e.last_name, e.email,
 			l.id, l.name
 		FROM %s r
-		JOIN employees e ON r.employee_id = e.id
-		JOIN locations l ON r.location_id = l.id
+		JOIN %s e ON r.employee_id = e.id
+		JOIN %s l ON r.location_id = l.id
 		WHERE r.id = $1
-	`, tableName)
+	`, tableName, userPg.TableName, locationPg.TableName)
 
-	row := r.DB.QueryRow(query, reportId)
+	row := r.DB.QueryRow(query, id)
 
 	report, err := scanReportRow(row)
 	if err != nil {
@@ -276,7 +276,7 @@ func (r *PgReportRepository) getFullReportById(reportId string) (*domain.Report,
 	return report, nil
 }
 
-func (r *PgReportRepository) getFullReportByIdAndStatus(reportId string, status uint64) (*domain.Report, error) {
+func (r *PgReportRepository) getFullReportByIdAndStatus(id string, status domain.ReportStatus) (*domain.Report, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
@@ -288,7 +288,7 @@ func (r *PgReportRepository) getFullReportByIdAndStatus(reportId string, status 
 		WHERE r.id = $1 AND r.status = $2
 	`, tableName, userPg.TableName, locationPg.TableName)
 
-	row := r.DB.QueryRow(query, reportId, status)
+	row := r.DB.QueryRow(query, id, status)
 
 	report, err := scanReportRow(row)
 	if err != nil {
@@ -298,7 +298,7 @@ func (r *PgReportRepository) getFullReportByIdAndStatus(reportId string, status 
 	return report, nil
 }
 
-func (r *PgReportRepository) getReportsByStatus(status uint64) ([]domain.Report, error) {
+func (r *PgReportRepository) getReportsByStatus(status domain.ReportStatus) ([]domain.Report, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,

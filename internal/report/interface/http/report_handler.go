@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time-management/internal/report/application/command"
 	"time-management/internal/report/application/query"
+	repDomain "time-management/internal/report/domain"
 	"time-management/internal/report/infrastructure/repository"
 	"time-management/internal/shared/util"
 	"time-management/internal/user/domain"
@@ -42,8 +43,16 @@ func NewReportHandler(repository *repository.PgReportRepository) *ReportHandler 
 }
 
 func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) error {
+	employeeId := chi.URLParam(r, "employee_id")
+	if employeeId == "" {
+		user, ok := r.Context().Value("user").(*domain.User)
+		if !ok {
+			return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: "Unauthorized: unable to get user"})
+		}
+		employeeId = user.Id
+	}
+
 	var req struct {
-		EmployeeId       string `json:"employee_id"`
 		LocationId       string `json:"location_id"`
 		WorkingHours     int64  `json:"working_hours"`
 		MaintenanceHours int64  `json:"maintenance_hours"`
@@ -53,11 +62,11 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) err
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 	if req.WorkingHours < 0 || req.MaintenanceHours < 0 {
-		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: "hours cannot be negative"})
+		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: repDomain.ErrInvalidHoursInput.Error()})
 	}
 
 	report, err := h.CreateReportHandler.Handle(command.CreateReportCommand{
-		EmployeeId:       req.EmployeeId,
+		EmployeeId:       employeeId,
 		LocationId:       req.LocationId,
 		WorkingHours:     uint64(req.WorkingHours),
 		MaintenanceHours: uint64(req.MaintenanceHours),

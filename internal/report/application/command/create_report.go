@@ -41,7 +41,7 @@ func (h *CreateReportHandler) Handle(cmd CreateReportCommand) (*domain.Report, e
 		cmd.LocationId,
 		cmd.WorkingHours,
 		cmd.MaintenanceHours,
-		0,
+		domain.Pending,
 		uint64(time.Now().Unix()),
 	)
 

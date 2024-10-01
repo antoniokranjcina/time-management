@@ -3,7 +3,6 @@ package util
 import (
 	"errors"
 	"net/http"
-	"time-management/internal/user/domain"
 )
 
 // ValidationError Custom error type for validation errors
@@ -26,6 +25,6 @@ func HandleError(w http.ResponseWriter, err error, statusCode int) error {
 		return WriteJson(w, statusCode, ApiError{Error: validationErr.Error()})
 	}
 
-	//return WriteJson(w, http.StatusInternalServerError, ApiError{Error: err.Error()})
-	return WriteJson(w, http.StatusInternalServerError, ApiError{Error: domain.ErrInternalServer.Error()})
+	return WriteJson(w, http.StatusInternalServerError, ApiError{Error: err.Error()})
+	//return WriteJson(w, http.StatusInternalServerError, ApiError{Error: domain.ErrInternalServer.Error()})
 }

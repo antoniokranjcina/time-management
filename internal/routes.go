@@ -79,6 +79,8 @@ func SetupRoutes(
 				Delete("/{id}", util.HttpHandler(adminHandler.DeleteAdmin))
 		})
 		r.Route("/reports", func(r chi.Router) {
+			r.With(Role(role.Manager)).
+				Post("/{employee_id}", util.HttpHandler(reportHandler.CreateReport))
 			r.With(Role(role.Employee)).
 				Post("/", util.HttpHandler(reportHandler.CreateReport))
 			r.With(Role(role.Manager)).

@@ -10,6 +10,7 @@ var (
 	ErrWrongLocationId         = errors.New("wrong location id: location does not exist")
 	ErrInvalidWorkingHours     = errors.New("invalid working hours")
 	ErrInvalidMaintenanceHours = errors.New("invalid maintenance hours")
+	ErrInvalidHoursInput       = errors.New("invalid hours input")
 	ErrInvalidHoursSum         = errors.New("invalid hours sum")
 	ErrCannotUpdateReport      = errors.New("cannot update report which is approved or denied")
 )
