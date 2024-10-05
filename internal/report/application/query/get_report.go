@@ -7,7 +7,7 @@ type GetReportsHandler struct {
 }
 
 func (h *GetReportsHandler) Handle() ([]domain.Report, error) {
-	reports, err := h.Repo.GetAll()
+	reports, err := h.Repo.GetAll(domain.Approved)
 	if err != nil {
 		return nil, err
 	}

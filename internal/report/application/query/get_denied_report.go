@@ -11,7 +11,7 @@ type GetDeniedReportHandler struct {
 }
 
 func (h *GetDeniedReportHandler) Handle(query GetDeniedReportQuery) (*domain.Report, error) {
-	report, err := h.Repo.GetDeniedById(query.Id)
+	report, err := h.Repo.GetById(query.Id, domain.Denied)
 	if err != nil {
 		return nil, err
 	}

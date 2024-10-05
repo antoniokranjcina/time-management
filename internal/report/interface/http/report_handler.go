@@ -13,32 +13,36 @@ import (
 )
 
 type ReportHandler struct {
-	CreateReportHandler        command.CreateReportHandler
-	GetReportsHandler          query.GetReportsHandler
-	GetPendingReportsHandler   query.GetPendingReportsHandler
-	GetDeniedReportsHandler    query.GetDeniedReportsHandler
-	GetReportHandler           query.GetReportHandler
-	GetPendingReportHandler    query.GetPendingReportHandler
-	GetDeniedReportHandler     query.GetDeniedReportHandler
-	UpdatePendingReportHandler command.UpdatePendingReportHandler
-	ApproveReportHandler       command.ApproveReportHandler
-	DenyReportHandler          command.DenyReportHandler
-	DeleteReportHandler        command.DeleteReportHandler
+	CreateReportHandler              command.CreateReportHandler
+	GetReportsHandler                query.GetReportsHandler
+	GetPendingReportsHandler         query.GetPendingReportsHandler
+	GetDeniedReportsHandler          query.GetDeniedReportsHandler
+	GetReportHandler                 query.GetReportHandler
+	GetPendingReportHandler          query.GetPendingReportHandler
+	GetPendingReportsByUserIdHandler query.GetPendingReportsByUserIdHandler
+	GetPendingReportByUserIdHandler  query.GetPendingReportByUserIdHandler
+	GetDeniedReportHandler           query.GetDeniedReportHandler
+	UpdatePendingReportHandler       command.UpdatePendingReportHandler
+	ApproveReportHandler             command.ApproveReportHandler
+	DenyReportHandler                command.DenyReportHandler
+	DeleteReportHandler              command.DeleteReportHandler
 }
 
 func NewReportHandler(repository *repository.PgReportRepository) *ReportHandler {
 	return &ReportHandler{
-		CreateReportHandler:        command.CreateReportHandler{Repo: repository},
-		GetPendingReportsHandler:   query.GetPendingReportsHandler{Repo: repository},
-		GetDeniedReportsHandler:    query.GetDeniedReportsHandler{Repo: repository},
-		GetReportsHandler:          query.GetReportsHandler{Repo: repository},
-		GetReportHandler:           query.GetReportHandler{Repo: repository},
-		GetPendingReportHandler:    query.GetPendingReportHandler{Repo: repository},
-		GetDeniedReportHandler:     query.GetDeniedReportHandler{Repo: repository},
-		UpdatePendingReportHandler: command.UpdatePendingReportHandler{Repo: repository},
-		ApproveReportHandler:       command.ApproveReportHandler{Repo: repository},
-		DenyReportHandler:          command.DenyReportHandler{Repo: repository},
-		DeleteReportHandler:        command.DeleteReportHandler{Repo: repository},
+		CreateReportHandler:              command.CreateReportHandler{Repo: repository},
+		GetPendingReportsHandler:         query.GetPendingReportsHandler{Repo: repository},
+		GetDeniedReportsHandler:          query.GetDeniedReportsHandler{Repo: repository},
+		GetReportsHandler:                query.GetReportsHandler{Repo: repository},
+		GetReportHandler:                 query.GetReportHandler{Repo: repository},
+		GetPendingReportHandler:          query.GetPendingReportHandler{Repo: repository},
+		GetDeniedReportHandler:           query.GetDeniedReportHandler{Repo: repository},
+		GetPendingReportsByUserIdHandler: query.GetPendingReportsByUserIdHandler{Repo: repository},
+		GetPendingReportByUserIdHandler:  query.GetPendingReportByUserIdHandler{Repo: repository},
+		UpdatePendingReportHandler:       command.UpdatePendingReportHandler{Repo: repository},
+		ApproveReportHandler:             command.ApproveReportHandler{Repo: repository},
+		DenyReportHandler:                command.DenyReportHandler{Repo: repository},
+		DeleteReportHandler:              command.DeleteReportHandler{Repo: repository},
 	}
 }
 
@@ -87,24 +91,6 @@ func (h *ReportHandler) GetReports(w http.ResponseWriter, r *http.Request) error
 	return util.WriteJson(w, http.StatusOK, reports)
 }
 
-func (h *ReportHandler) GetPendingReports(w http.ResponseWriter, r *http.Request) error {
-	reports, err := h.GetPendingReportsHandler.Handle()
-	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
-	}
-
-	return util.WriteJson(w, http.StatusOK, reports)
-}
-
-func (h *ReportHandler) GetDeniedReports(w http.ResponseWriter, r *http.Request) error {
-	reports, err := h.GetDeniedReportsHandler.Handle()
-	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
-	}
-
-	return util.WriteJson(w, http.StatusOK, reports)
-}
-
 func (h *ReportHandler) GetReport(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
@@ -114,6 +100,50 @@ func (h *ReportHandler) GetReport(w http.ResponseWriter, r *http.Request) error 
 	}
 
 	return util.WriteJson(w, http.StatusOK, report)
+}
+
+func (h *ReportHandler) GetOwnPendingReports(w http.ResponseWriter, r *http.Request) error {
+	user, ok := r.Context().Value("user").(*domain.User)
+	if !ok || user == nil {
+		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
+	}
+
+	reports, err := h.GetPendingReportsByUserIdHandler.Handle(query.GetPendingReportsByUserIdQuery{
+		UserId: user.Id,
+	})
+	if err != nil {
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
+}
+
+func (h *ReportHandler) GetOwnPendingReport(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+
+	user, ok := r.Context().Value("user").(*domain.User)
+	if !ok || user == nil {
+		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
+	}
+
+	report, err := h.GetPendingReportByUserIdHandler.Handle(query.GetPendingReportByUserIdQuery{
+		Id:     id,
+		UserId: user.Id,
+	})
+	if err != nil {
+		return util.HandleError(w, err, http.StatusNotFound)
+	}
+
+	return util.WriteJson(w, http.StatusOK, report)
+}
+
+func (h *ReportHandler) GetPendingReports(w http.ResponseWriter, r *http.Request) error {
+	reports, err := h.GetPendingReportsHandler.Handle()
+	if err != nil {
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
 }
 
 func (h *ReportHandler) GetPendingReport(w http.ResponseWriter, r *http.Request) error {
@@ -127,10 +157,27 @@ func (h *ReportHandler) GetPendingReport(w http.ResponseWriter, r *http.Request)
 	return util.WriteJson(w, http.StatusOK, report)
 }
 
-func (h *ReportHandler) GetDeniedReport(w http.ResponseWriter, r *http.Request) error {
+func (h *ReportHandler) GetPendingReportsForUser(w http.ResponseWriter, r *http.Request) error {
+	userId := chi.URLParam(r, "user_id")
+
+	reports, err := h.GetPendingReportsByUserIdHandler.Handle(query.GetPendingReportsByUserIdQuery{
+		UserId: userId,
+	})
+	if err != nil {
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
+}
+
+func (h *ReportHandler) GetPendingReportForUser(w http.ResponseWriter, r *http.Request) error {
+	userId := chi.URLParam(r, "user_id")
 	id := chi.URLParam(r, "id")
 
-	report, err := h.GetDeniedReportHandler.Handle(query.GetDeniedReportQuery{Id: id})
+	report, err := h.GetPendingReportByUserIdHandler.Handle(query.GetPendingReportByUserIdQuery{
+		Id:     id,
+		UserId: userId,
+	})
 	if err != nil {
 		return util.HandleError(w, err, http.StatusNotFound)
 	}
@@ -165,6 +212,26 @@ func (h *ReportHandler) UpdatePendingReport(w http.ResponseWriter, r *http.Reque
 	}
 
 	return util.WriteJson(w, http.StatusOK, updatedReport)
+}
+
+func (h *ReportHandler) GetDeniedReports(w http.ResponseWriter, r *http.Request) error {
+	reports, err := h.GetDeniedReportsHandler.Handle()
+	if err != nil {
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
+}
+
+func (h *ReportHandler) GetDeniedReport(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+
+	report, err := h.GetDeniedReportHandler.Handle(query.GetDeniedReportQuery{Id: id})
+	if err != nil {
+		return util.HandleError(w, err, http.StatusNotFound)
+	}
+
+	return util.WriteJson(w, http.StatusOK, report)
 }
 
 func (h *ReportHandler) ApproveReport(w http.ResponseWriter, r *http.Request) error {

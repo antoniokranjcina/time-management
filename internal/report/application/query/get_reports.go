@@ -11,7 +11,7 @@ type GetReportHandler struct {
 }
 
 func (h *GetReportHandler) Handle(query GetReportQuery) (*domain.Report, error) {
-	report, err := h.Repo.GetById(query.Id)
+	report, err := h.Repo.GetById(query.Id, domain.Approved)
 	if err != nil {
 		return nil, err
 	}

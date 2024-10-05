@@ -7,7 +7,7 @@ type GetPendingReportsHandler struct {
 }
 
 func (h *GetPendingReportsHandler) Handle() ([]domain.Report, error) {
-	reports, err := h.Repo.GetPendingAll()
+	reports, err := h.Repo.GetAll(domain.Pending)
 	if err != nil {
 		return nil, err
 	}

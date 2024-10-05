@@ -11,7 +11,7 @@ type GetPendingReportHandler struct {
 }
 
 func (h *GetPendingReportHandler) Handle(query GetPendingReportQuery) (*domain.Report, error) {
-	reports, err := h.Repo.GetPendingById(query.Id)
+	reports, err := h.Repo.GetById(query.Id, domain.Pending)
 	if err != nil {
 		return nil, err
 	}

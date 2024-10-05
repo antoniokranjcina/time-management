@@ -7,7 +7,7 @@ type GetDeniedReportsHandler struct {
 }
 
 func (h *GetDeniedReportsHandler) Handle() ([]domain.Report, error) {
-	reports, err := h.Repo.GetDeniedAll()
+	reports, err := h.Repo.GetAll(domain.Denied)
 	if err != nil {
 		return nil, err
 	}

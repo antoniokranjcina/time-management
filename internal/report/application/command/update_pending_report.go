@@ -30,7 +30,7 @@ func (h *UpdatePendingReportHandler) Handle(cmd UpdatePendingReportCommand) (*do
 		return nil, util.NewValidationError(domain.ErrInvalidHoursSum)
 	}
 
-	updatedReport, err := h.Repo.UpdatePending(cmd.Id, cmd.LocationId, cmd.WorkingHours, cmd.MaintenanceHours)
+	updatedReport, err := h.Repo.Update(cmd.Id, cmd.LocationId, cmd.WorkingHours, cmd.MaintenanceHours, domain.Pending)
 	if err != nil {
 		return nil, err
 	}

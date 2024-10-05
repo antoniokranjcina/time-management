@@ -114,20 +114,50 @@ func (r *PgReportRepository) Create(report *domain.Report) (*domain.Report, erro
 	return rep, nil
 }
 
-func (r *PgReportRepository) GetAll() ([]domain.Report, error) {
-	return r.getReportsByStatus(domain.Approved)
+func (r *PgReportRepository) GetAll(status domain.ReportStatus) ([]domain.Report, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
+			e.id, e.first_name, e.last_name, e.email,
+			l.id, l.name
+		FROM %s r
+		JOIN %s e ON r.employee_id = e.id
+		JOIN %s l ON r.location_id = l.id
+		WHERE r.status = $1;
+	`, tableName, userPg.TableName, locationPg.TableName)
+
+	rows, err := r.DB.Query(query, status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return r.ScanReportRows(rows)
 }
 
-func (r *PgReportRepository) GetPendingAll() ([]domain.Report, error) {
-	return r.getReportsByStatus(domain.Pending)
+func (r *PgReportRepository) GetAllWithUserId(employeeId string, status domain.ReportStatus) ([]domain.Report, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
+			e.id, e.first_name, e.last_name, e.email,
+			l.id, l.name
+		FROM %s r
+		JOIN %s e ON r.employee_id = e.id
+		JOIN %s l ON r.location_id = l.id
+		WHERE r.employee_id = $1 AND r.status = $2;
+	`, tableName, userPg.TableName, locationPg.TableName)
+
+	rows, err := r.DB.Query(query, employeeId, status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return r.ScanReportRows(rows)
 }
 
-func (r *PgReportRepository) GetDeniedAll() ([]domain.Report, error) {
-	return r.getReportsByStatus(domain.Denied)
-}
-
-func (r *PgReportRepository) GetById(id string) (*domain.Report, error) {
-	report, err := r.getFullReportByIdAndStatus(id, domain.Approved)
+func (r *PgReportRepository) GetById(id string, status domain.ReportStatus) (*domain.Report, error) {
+	report, err := r.getFullReportByIdAndStatus(id, status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, util.NewValidationError(domain.ErrReportNotFound)
@@ -137,37 +167,25 @@ func (r *PgReportRepository) GetById(id string) (*domain.Report, error) {
 	return report, nil
 }
 
-func (r *PgReportRepository) GetPendingById(id string) (*domain.Report, error) {
-	report, err := r.getFullReportByIdAndStatus(id, domain.Pending)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, util.NewValidationError(domain.ErrPendingReportNotFound)
-		}
-	}
+func (r *PgReportRepository) GetByIdWithUserId(id, userId string, status domain.ReportStatus) (*domain.Report, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
+			e.id, e.first_name, e.last_name, e.email,
+			l.id, l.name
+		FROM %s r
+		JOIN %s e ON r.employee_id = e.id
+		JOIN %s l ON r.location_id = l.id
+		WHERE r.employee_id = $1 AND r.id = $2 AND r.status = $3;
 
-	return report, nil
+	`, tableName, userPg.TableName, locationPg.TableName)
+
+	row := r.DB.QueryRow(query, userId, id, status)
+
+	return r.ScanReportRow(row)
 }
 
-func (r *PgReportRepository) GetDeniedById(id string) (*domain.Report, error) {
-	report, err := r.getFullReportByIdAndStatus(id, domain.Denied)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, util.NewValidationError(domain.ErrDeniedReportNotFound)
-		}
-	}
-
-	return report, nil
-}
-
-func (r *PgReportRepository) UpdatePending(id, locationId string, workingHours, maintenanceHours uint64) (*domain.Report, error) {
-	matches, err := r.checkIfReportMatchesStatus(id, domain.Pending)
-	if err != nil {
-		return nil, err
-	}
-	if !matches {
-		return nil, util.NewValidationError(domain.ErrCannotUpdateReport)
-	}
-
+func (r *PgReportRepository) Update(id, locationId string, workingHours, maintenanceHours uint64, status domain.ReportStatus) (*domain.Report, error) {
 	locationExist, err := r.checkIfRecordExists(locationId, locationPg.TableName)
 	if err != nil {
 		return nil, err
@@ -189,7 +207,7 @@ func (r *PgReportRepository) UpdatePending(id, locationId string, workingHours, 
 		return nil, err
 	}
 
-	updateReport, err := r.getFullReportByIdAndStatus(updatedId, domain.Pending)
+	updateReport, err := r.getFullReportByIdAndStatus(updatedId, status)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +254,7 @@ func (r *PgReportRepository) checkIfRecordExists(id, table string) (bool, error)
 	var exists bool
 	err := r.DB.QueryRow(query, id).Scan(&exists)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
 	return exists, nil
@@ -255,7 +273,15 @@ func (r *PgReportRepository) checkIfReportMatchesStatus(id string, status domain
 }
 
 func (r *PgReportRepository) getFullReportById(id string) (*domain.Report, error) {
-	query := fmt.Sprintf(`
+	return r.getFullReport(id, nil)
+}
+
+func (r *PgReportRepository) getFullReportByIdAndStatus(id string, status domain.ReportStatus) (*domain.Report, error) {
+	return r.getFullReport(id, &status)
+}
+
+func (r *PgReportRepository) getFullReport(id string, status *domain.ReportStatus) (*domain.Report, error) {
+	baseQuery := fmt.Sprintf(`
 		SELECT 
 			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
 			e.id, e.first_name, e.last_name, e.email,
@@ -266,100 +292,16 @@ func (r *PgReportRepository) getFullReportById(id string) (*domain.Report, error
 		WHERE r.id = $1
 	`, tableName, userPg.TableName, locationPg.TableName)
 
-	row := r.DB.QueryRow(query, id)
-
-	report, err := scanReportRow(row)
-	if err != nil {
-		return nil, err
+	if status != nil {
+		baseQuery += " AND r.status = $2"
 	}
 
-	return report, nil
-}
-
-func (r *PgReportRepository) getFullReportByIdAndStatus(id string, status domain.ReportStatus) (*domain.Report, error) {
-	query := fmt.Sprintf(`
-		SELECT 
-			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
-			e.id, e.first_name, e.last_name, e.email,
-			l.id, l.name
-		FROM %s r
-		JOIN %s e ON r.employee_id = e.id
-		JOIN %s l ON r.location_id = l.id
-		WHERE r.id = $1 AND r.status = $2
-	`, tableName, userPg.TableName, locationPg.TableName)
-
-	row := r.DB.QueryRow(query, id, status)
-
-	report, err := scanReportRow(row)
-	if err != nil {
-		return nil, err
+	var row *sql.Row
+	if status != nil {
+		row = r.DB.QueryRow(baseQuery, id, *status)
+	} else {
+		row = r.DB.QueryRow(baseQuery, id)
 	}
 
-	return report, nil
-}
-
-func (r *PgReportRepository) getReportsByStatus(status domain.ReportStatus) ([]domain.Report, error) {
-	query := fmt.Sprintf(`
-		SELECT 
-			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
-			e.id, e.first_name, e.last_name, e.email,
-			l.id, l.name
-		FROM %s r
-		JOIN %s e ON r.employee_id = e.id
-		JOIN %s l ON r.location_id = l.id
-		WHERE r.status = %d;
-	`, tableName, userPg.TableName, locationPg.TableName, status)
-
-	rows, err := r.DB.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var reports []domain.Report
-	for rows.Next() {
-		var report domain.Report
-		var employee domain.Employee
-		var location domain.Location
-
-		err := rows.Scan(
-			&report.Id, &report.WorkingHours, &report.MaintenanceHours, &report.Status, &report.CreatedAt,
-			&employee.Id, &employee.FirstName, &employee.LastName, &employee.Email,
-			&location.Id, &location.Name,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		report.Employee = employee
-		report.Location = location
-
-		reports = append(reports, report)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return reports, nil
-}
-
-func scanReportRow(row *sql.Row) (*domain.Report, error) {
-	var report domain.Report
-	var employee domain.Employee
-	var location domain.Location
-
-	err := row.Scan(
-		&report.Id, &report.WorkingHours, &report.MaintenanceHours, &report.Status, &report.CreatedAt,
-		&employee.Id, &employee.FirstName, &employee.LastName, &employee.Email,
-		&location.Id, &location.Name,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	report.Employee = employee
-	report.Location = location
-
-	return &report, nil
+	return r.ScanReportRow(row)
 }
