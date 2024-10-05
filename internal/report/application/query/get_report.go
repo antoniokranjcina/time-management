@@ -1,13 +1,16 @@
 package query
 
-import "time-management/internal/report/domain"
+import (
+	"context"
+	"time-management/internal/report/domain"
+)
 
 type GetReportsHandler struct {
 	Repo domain.ReportRepository
 }
 
-func (h *GetReportsHandler) Handle() ([]domain.Report, error) {
-	reports, err := h.Repo.GetAll()
+func (h *GetReportsHandler) Handle(ctx context.Context) ([]domain.Report, error) {
+	reports, err := h.Repo.GetAll(ctx, domain.Approved)
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,7 @@ func RoleMiddleware(allowedRoles ...string) func(next http.Handler) http.Handler
 				return
 			}
 
-			// Check if user is a SuperAdmin, if yes, grant access
+			// Check if user is a SuperAdmin or Admin, if yes, grant access
 			if user.Role == role.SuperAdmin.String() || user.Role == role.Admin.String() {
 				next.ServeHTTP(w, r)
 				return

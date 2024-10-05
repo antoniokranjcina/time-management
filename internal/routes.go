@@ -87,16 +87,35 @@ func SetupRoutes(
 				Get("/", util.HttpHandler(reportHandler.GetReports))
 			r.With(Role(role.Manager)).
 				Get("/{id}", util.HttpHandler(reportHandler.GetReport))
-			r.With(Role(role.Employee, role.Manager)).
-				Get("/pending", util.HttpHandler(reportHandler.GetPendingReports))
-			r.With(Role(role.Employee, role.Manager)).
-				Get("/pending/{id}", util.HttpHandler(reportHandler.GetPendingReport))
-			r.With(Role(role.Employee, role.Manager)).
-				Put("/pending/{id}", util.HttpHandler(reportHandler.UpdatePendingReport))
-			r.With(Role(role.Manager)).
-				Get("/denied", util.HttpHandler(reportHandler.GetDeniedReports))
-			r.With(Role(role.Manager)).
-				Get("/denied/{id}", util.HttpHandler(reportHandler.GetDeniedReport))
+
+			r.Route("/pending", func(r chi.Router) {
+				r.With(Role(role.Employee, role.Manager)).
+					Get("/", util.HttpHandler(reportHandler.GetOwnPendingReports))
+				r.With(Role(role.Employee, role.Manager)).
+					Get("/{id}", util.HttpHandler(reportHandler.GetOwnPendingReport))
+
+				r.Route("/users", func(r chi.Router) {
+					r.With(Role(role.Manager)).
+						Get("/all", util.HttpHandler(reportHandler.GetPendingReports))
+					r.With(Role(role.Manager)).
+						Get("/all/{id}", util.HttpHandler(reportHandler.GetPendingReport))
+
+					r.With(Role(role.Manager)).
+						Get("/{user_id}", util.HttpHandler(reportHandler.GetPendingReportsForUser))
+					r.With(Role(role.Manager)).
+						Get("/{user_id}/{id}", util.HttpHandler(reportHandler.GetPendingReportForUser))
+				})
+
+				r.With(Role(role.Employee, role.Manager)).
+					Put("/{id}", util.HttpHandler(reportHandler.UpdatePendingReport))
+			})
+
+			r.Route("/denied", func(r chi.Router) {
+				r.With(Role(role.Manager)).
+					Get("/", util.HttpHandler(reportHandler.GetDeniedReports))
+				r.With(Role(role.Manager)).
+					Get("/{id}", util.HttpHandler(reportHandler.GetDeniedReport))
+			})
 			r.With(Role(role.Manager)).
 				Patch("/{id}/approve", util.HttpHandler(reportHandler.ApproveReport))
 			r.With(Role(role.Manager)).

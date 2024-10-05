@@ -1,13 +1,16 @@
 package query
 
-import "time-management/internal/report/domain"
+import (
+	"context"
+	"time-management/internal/report/domain"
+)
 
 type GetDeniedReportsHandler struct {
 	Repo domain.ReportRepository
 }
 
-func (h *GetDeniedReportsHandler) Handle() ([]domain.Report, error) {
-	reports, err := h.Repo.GetDeniedAll()
+func (h *GetDeniedReportsHandler) Handle(ctx context.Context) ([]domain.Report, error) {
+	reports, err := h.Repo.GetAll(ctx, domain.Denied)
 	if err != nil {
 		return nil, err
 	}
