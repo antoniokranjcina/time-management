@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"time-management/internal/report/domain"
 	"time-management/internal/shared/util"
 )
@@ -16,7 +17,7 @@ type UpdatePendingReportHandler struct {
 	Repo domain.ReportRepository
 }
 
-func (h *UpdatePendingReportHandler) Handle(cmd UpdatePendingReportCommand) (*domain.Report, error) {
+func (h *UpdatePendingReportHandler) Handle(ctx context.Context, cmd UpdatePendingReportCommand) (*domain.Report, error) {
 	if cmd.LocationId == "" || len(cmd.LocationId) >= 50 {
 		return nil, util.NewValidationError(domain.ErrWrongLocationId)
 	}
@@ -30,7 +31,14 @@ func (h *UpdatePendingReportHandler) Handle(cmd UpdatePendingReportCommand) (*do
 		return nil, util.NewValidationError(domain.ErrInvalidHoursSum)
 	}
 
-	updatedReport, err := h.Repo.Update(cmd.Id, cmd.LocationId, cmd.WorkingHours, cmd.MaintenanceHours, domain.Pending)
+	updatedReport, err := h.Repo.Update(
+		ctx,
+		cmd.Id,
+		cmd.LocationId,
+		cmd.WorkingHours,
+		cmd.MaintenanceHours,
+		domain.Pending,
+	)
 	if err != nil {
 		return nil, err
 	}

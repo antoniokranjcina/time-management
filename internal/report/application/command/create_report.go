@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"time"
 	"time-management/internal/report/domain"
@@ -18,7 +19,7 @@ type CreateReportHandler struct {
 	Repo domain.ReportRepository
 }
 
-func (h *CreateReportHandler) Handle(cmd CreateReportCommand) (*domain.Report, error) {
+func (h *CreateReportHandler) Handle(ctx context.Context, cmd CreateReportCommand) (*domain.Report, error) {
 	if cmd.EmployeeId == "" || len(cmd.EmployeeId) >= 50 {
 		return nil, util.NewValidationError(domain.ErrWrongEmployeeId)
 	}
@@ -45,7 +46,7 @@ func (h *CreateReportHandler) Handle(cmd CreateReportCommand) (*domain.Report, e
 		uint64(time.Now().Unix()),
 	)
 
-	createdReport, err := h.Repo.Create(report)
+	createdReport, err := h.Repo.Create(ctx, report)
 	if err != nil {
 		return nil, err
 	}

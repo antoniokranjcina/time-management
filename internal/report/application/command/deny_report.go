@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"time-management/internal/report/domain"
 )
 
@@ -12,8 +13,8 @@ type DenyReportHandler struct {
 	Repo domain.ReportRepository
 }
 
-func (h *DenyReportHandler) Handle(cmd DenyReportCommand) error {
-	err := h.Repo.Deny(cmd.Id)
+func (h *DenyReportHandler) Handle(ctx context.Context, cmd DenyReportCommand) error {
+	err := h.Repo.Deny(ctx, cmd.Id)
 	if err != nil {
 		return err
 	}

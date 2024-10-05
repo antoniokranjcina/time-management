@@ -1,6 +1,9 @@
 package query
 
-import "time-management/internal/report/domain"
+import (
+	"context"
+	"time-management/internal/report/domain"
+)
 
 type GetPendingReportByUserIdQuery struct {
 	Id     string
@@ -11,8 +14,8 @@ type GetPendingReportByUserIdHandler struct {
 	Repo domain.ReportRepository
 }
 
-func (h *GetPendingReportByUserIdHandler) Handle(query GetPendingReportByUserIdQuery) (*domain.Report, error) {
-	reports, err := h.Repo.GetByIdWithUserId(query.Id, query.UserId, domain.Pending)
+func (h *GetPendingReportByUserIdHandler) Handle(ctx context.Context, query GetPendingReportByUserIdQuery) (*domain.Report, error) {
+	reports, err := h.Repo.GetByIdWithUserId(ctx, query.Id, query.UserId, domain.Pending)
 	if err != nil {
 		return nil, err
 	}
