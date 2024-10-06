@@ -184,7 +184,7 @@ func (r *PgReportRepository) GetById(
 	id string,
 	status domain.ReportStatus,
 ) (*domain.Report, error) {
-	report, err := r.getFullReportByIdAndStatus(ctx, id, status)
+	report, err := r.getFullReport(ctx, id, &status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, util.NewValidationError(domain.ErrReportNotFound)
@@ -218,7 +218,7 @@ func (r *PgReportRepository) GetByIdWithUserId(
 
 func (r *PgReportRepository) Update(
 	ctx context.Context,
-	id, locationId string,
+	id, userId, locationId string,
 	workingHours, maintenanceHours uint64,
 	status domain.ReportStatus,
 ) (*domain.Report, error) {
@@ -232,18 +232,24 @@ func (r *PgReportRepository) Update(
 
 	query := fmt.Sprintf(`
 		UPDATE %s SET working_hours=$1, maintenance_hours=$2, location_id=$3 
-	  	WHERE id=$4
-		RETURNING id
+		WHERE id=$4 AND employee_id=$5 AND status=$6
 	`, tableName)
 
-	var updatedId string
-	row := r.DB.QueryRowContext(ctx, query, workingHours, maintenanceHours, locationId, id)
-	err = row.Scan(&updatedId)
+	result, err := r.DB.ExecContext(ctx, query, workingHours, maintenanceHours, locationId, id, userId, status)
 	if err != nil {
 		return nil, err
 	}
 
-	updateReport, err := r.getFullReportByIdAndStatus(ctx, updatedId, status)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	if rowsAffected == 0 {
+		return nil, util.NewValidationError(domain.ErrReportNotFoundOrUnauthorized)
+	}
+
+	updateReport, err := r.getFullReport(ctx, id, &status)
 	if err != nil {
 		return nil, err
 	}
@@ -310,14 +316,6 @@ func (r *PgReportRepository) checkIfReportMatchesStatus(
 	}
 
 	return matches, nil
-}
-
-func (r *PgReportRepository) getFullReportByIdAndStatus(
-	ctx context.Context,
-	id string,
-	status domain.ReportStatus,
-) (*domain.Report, error) {
-	return r.getFullReport(ctx, id, &status)
 }
 
 func (r *PgReportRepository) getFullReport(

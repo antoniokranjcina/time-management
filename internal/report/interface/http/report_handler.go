@@ -182,8 +182,13 @@ func (h *ReportHandler) GetPendingReportForUser(w http.ResponseWriter, r *http.R
 	return util.WriteJson(w, http.StatusOK, report)
 }
 
-func (h *ReportHandler) UpdatePendingReport(w http.ResponseWriter, r *http.Request) error {
+func (h *ReportHandler) UpdateOwnPendingReport(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
+
+	user, ok := r.Context().Value("user").(*domain.User)
+	if !ok || user == nil {
+		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
+	}
 
 	var req struct {
 		LocationId       string `json:"location_id"`
@@ -199,6 +204,39 @@ func (h *ReportHandler) UpdatePendingReport(w http.ResponseWriter, r *http.Reque
 	}
 
 	reportCmd := command.UpdatePendingReportCommand{
+		UserId:           user.Id,
+		Id:               id,
+		LocationId:       req.LocationId,
+		WorkingHours:     uint64(req.WorkingHours),
+		MaintenanceHours: uint64(req.MaintenanceHours),
+	}
+	updatedReport, err := h.UpdatePendingReportHandler.Handle(r.Context(), reportCmd)
+	if err != nil {
+		return util.HandleError(w, err, http.StatusBadRequest)
+	}
+
+	return util.WriteJson(w, http.StatusOK, updatedReport)
+}
+
+func (h *ReportHandler) UpdatePendingReport(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+	userId := chi.URLParam(r, "user_id")
+
+	var req struct {
+		LocationId       string `json:"location_id"`
+		WorkingHours     int64  `json:"working_hours"`
+		MaintenanceHours int64  `json:"maintenance_hours"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
+	}
+	if req.WorkingHours < 0 || req.MaintenanceHours < 0 {
+		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: "hours cannot be negative"})
+	}
+
+	reportCmd := command.UpdatePendingReportCommand{
+		UserId:           userId,
 		Id:               id,
 		LocationId:       req.LocationId,
 		WorkingHours:     uint64(req.WorkingHours),
