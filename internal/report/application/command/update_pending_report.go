@@ -7,6 +7,7 @@ import (
 )
 
 type UpdatePendingReportCommand struct {
+	UserId           string
 	Id               string
 	LocationId       string
 	WorkingHours     uint64
@@ -17,7 +18,10 @@ type UpdatePendingReportHandler struct {
 	Repo domain.ReportRepository
 }
 
-func (h *UpdatePendingReportHandler) Handle(ctx context.Context, cmd UpdatePendingReportCommand) (*domain.Report, error) {
+func (h *UpdatePendingReportHandler) Handle(
+	ctx context.Context,
+	cmd UpdatePendingReportCommand,
+) (*domain.Report, error) {
 	if cmd.LocationId == "" || len(cmd.LocationId) >= 50 {
 		return nil, util.NewValidationError(domain.ErrWrongLocationId)
 	}
@@ -34,6 +38,7 @@ func (h *UpdatePendingReportHandler) Handle(ctx context.Context, cmd UpdatePendi
 	updatedReport, err := h.Repo.Update(
 		ctx,
 		cmd.Id,
+		cmd.UserId,
 		cmd.LocationId,
 		cmd.WorkingHours,
 		cmd.MaintenanceHours,

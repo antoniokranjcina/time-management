@@ -10,7 +10,7 @@ type ReportRepository interface {
 	GetByIdWithUserId(ctx context.Context, id, userId string, status ReportStatus) (*Report, error)
 	Update(
 		ctx context.Context,
-		id, locationId string,
+		id, userId, locationId string,
 		workingHours, maintenanceHours uint64,
 		status ReportStatus,
 	) (*Report, error)
