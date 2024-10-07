@@ -81,12 +81,24 @@ func SetupRoutes(
 		r.Route("/reports", func(r chi.Router) {
 			r.With(Role(role.Manager)).
 				Post("/{employee_id}", util.HttpHandler(reportHandler.CreateReport))
-			r.With(Role(role.Employee)).
+			r.With(Role(role.Employee, role.Manager)).
 				Post("/", util.HttpHandler(reportHandler.CreateReport))
-			r.With(Role(role.Manager)).
-				Get("/", util.HttpHandler(reportHandler.GetReports))
-			r.With(Role(role.Manager)).
-				Get("/{id}", util.HttpHandler(reportHandler.GetReport))
+			r.With(Role(role.Employee, role.Manager)).
+				Get("/", util.HttpHandler(reportHandler.GetOwnReports))
+			r.With(Role(role.Employee, role.Manager)).
+				Get("/{id}", util.HttpHandler(reportHandler.GetOwnReport))
+			r.Route("/users", func(r chi.Router) {
+				r.Route("/all", func(r chi.Router) {
+					r.With(Role(role.Manager)).
+						Get("/", util.HttpHandler(reportHandler.GetReports))
+					r.With(Role(role.Manager)).
+						Get("/{id}", util.HttpHandler(reportHandler.GetReport))
+				})
+				r.With(Role(role.Manager)).
+					Get("/{user_id}", util.HttpHandler(reportHandler.GetReportsForUser))
+				r.With(Role(role.Manager)).
+					Get("/{user_id}/{id}", util.HttpHandler(reportHandler.GetReportForUser))
+			})
 			r.Route("/pending", func(r chi.Router) {
 				r.With(Role(role.Employee, role.Manager)).
 					Get("/", util.HttpHandler(reportHandler.GetOwnPendingReports))

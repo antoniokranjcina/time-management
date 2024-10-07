@@ -16,6 +16,8 @@ type ReportHandler struct {
 	CreateReportHandler              command.CreateReportHandler
 	GetReportsHandler                query.GetReportsHandler
 	GetReportHandler                 query.GetReportHandler
+	GetReportsByUserIdHandler        query.GetReportsByUserIdHandler
+	GetReportByUserIdHandler         query.GetReportByUserIdHandler
 	GetPendingReportsHandler         query.GetPendingReportsHandler
 	GetPendingReportHandler          query.GetPendingReportHandler
 	GetPendingReportsByUserIdHandler query.GetPendingReportsByUserIdHandler
@@ -35,6 +37,8 @@ func NewReportHandler(repository *repository.PgReportRepository) *ReportHandler 
 		CreateReportHandler:              command.CreateReportHandler{Repo: repository},
 		GetReportsHandler:                query.GetReportsHandler{Repo: repository},
 		GetReportHandler:                 query.GetReportHandler{Repo: repository},
+		GetReportsByUserIdHandler:        query.GetReportsByUserIdHandler{Repo: repository},
+		GetReportByUserIdHandler:         query.GetReportByUserIdHandler{Repo: repository},
 		GetPendingReportsHandler:         query.GetPendingReportsHandler{Repo: repository},
 		GetPendingReportHandler:          query.GetPendingReportHandler{Repo: repository},
 		GetPendingReportsByUserIdHandler: query.GetPendingReportsByUserIdHandler{Repo: repository},
@@ -88,6 +92,38 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) err
 	return util.WriteJson(w, http.StatusCreated, report)
 }
 
+func (h *ReportHandler) GetOwnReports(w http.ResponseWriter, r *http.Request) error {
+	user, ok := r.Context().Value("user").(*domain.User)
+	if !ok || user == nil {
+		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
+	}
+
+	reportsQuery := query.GetReportsByUserIdQuery{UserId: user.Id}
+	reports, err := h.GetReportsByUserIdHandler.Handle(r.Context(), reportsQuery)
+	if err != nil {
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
+}
+
+func (h *ReportHandler) GetOwnReport(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+
+	user, ok := r.Context().Value("user").(*domain.User)
+	if !ok || user == nil {
+		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
+	}
+
+	reportQuery := query.GetReportByUserIdQuery{Id: id, UserId: user.Id}
+	report, err := h.GetReportByUserIdHandler.Handle(r.Context(), reportQuery)
+	if err != nil {
+		return util.HandleError(w, err, http.StatusNotFound)
+	}
+
+	return util.WriteJson(w, http.StatusOK, report)
+}
+
 func (h *ReportHandler) GetReports(w http.ResponseWriter, r *http.Request) error {
 	reports, err := h.GetReportsHandler.Handle(r.Context())
 	if err != nil {
@@ -101,6 +137,31 @@ func (h *ReportHandler) GetReport(w http.ResponseWriter, r *http.Request) error 
 	id := chi.URLParam(r, "id")
 
 	report, err := h.GetReportHandler.Handle(r.Context(), query.GetReportQuery{Id: id})
+	if err != nil {
+		return util.HandleError(w, err, http.StatusNotFound)
+	}
+
+	return util.WriteJson(w, http.StatusOK, report)
+}
+
+func (h *ReportHandler) GetReportsForUser(w http.ResponseWriter, r *http.Request) error {
+	userId := chi.URLParam(r, "user_id")
+
+	reportsQuery := query.GetReportsByUserIdQuery{UserId: userId}
+	reports, err := h.GetReportsByUserIdHandler.Handle(r.Context(), reportsQuery)
+	if err != nil {
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
+}
+
+func (h *ReportHandler) GetReportForUser(w http.ResponseWriter, r *http.Request) error {
+	userId := chi.URLParam(r, "user_id")
+	id := chi.URLParam(r, "id")
+
+	reportQuery := query.GetReportByUserIdQuery{Id: id, UserId: userId}
+	report, err := h.GetReportByUserIdHandler.Handle(r.Context(), reportQuery)
 	if err != nil {
 		return util.HandleError(w, err, http.StatusNotFound)
 	}
