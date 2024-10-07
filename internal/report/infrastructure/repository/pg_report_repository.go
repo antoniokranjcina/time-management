@@ -187,8 +187,10 @@ func (r *PgReportRepository) GetById(
 	report, err := r.getFullReport(ctx, id, &status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, util.NewValidationError(domain.ErrReportNotFound)
+			return nil, util.NewNotFoundError(domain.ErrReportNotFound)
 		}
+
+		return nil, err
 	}
 
 	return report, nil

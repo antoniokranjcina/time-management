@@ -104,6 +104,10 @@ func (h *ReportHandler) GetOwnReports(w http.ResponseWriter, r *http.Request) er
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
+	if reports == nil {
+		reports = []repDomain.Report{}
+	}
+
 	return util.WriteJson(w, http.StatusOK, reports)
 }
 
@@ -130,6 +134,10 @@ func (h *ReportHandler) GetReports(w http.ResponseWriter, r *http.Request) error
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
+	if reports == nil {
+		reports = []repDomain.Report{}
+	}
+
 	return util.WriteJson(w, http.StatusOK, reports)
 }
 
@@ -151,6 +159,10 @@ func (h *ReportHandler) GetReportsForUser(w http.ResponseWriter, r *http.Request
 	reports, err := h.GetReportsByUserIdHandler.Handle(r.Context(), reportsQuery)
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	if reports == nil {
+		reports = []repDomain.Report{}
 	}
 
 	return util.WriteJson(w, http.StatusOK, reports)
@@ -181,6 +193,10 @@ func (h *ReportHandler) GetOwnPendingReports(w http.ResponseWriter, r *http.Requ
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
+	if reports == nil {
+		reports = []repDomain.Report{}
+	}
+
 	return util.WriteJson(w, http.StatusOK, reports)
 }
 
@@ -208,6 +224,10 @@ func (h *ReportHandler) GetPendingReports(w http.ResponseWriter, r *http.Request
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
+	if reports == nil {
+		reports = []repDomain.Report{}
+	}
+
 	return util.WriteJson(w, http.StatusOK, reports)
 }
 
@@ -232,6 +252,10 @@ func (h *ReportHandler) GetPendingReportsForUser(w http.ResponseWriter, r *http.
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
 
+	if reports == nil {
+		reports = []repDomain.Report{}
+	}
+
 	return util.WriteJson(w, http.StatusOK, reports)
 }
 
@@ -246,6 +270,128 @@ func (h *ReportHandler) GetPendingReportForUser(w http.ResponseWriter, r *http.R
 	}
 
 	return util.WriteJson(w, http.StatusOK, report)
+}
+
+func (h *ReportHandler) GetOwnDeniedReports(w http.ResponseWriter, r *http.Request) error {
+	user, ok := r.Context().Value("user").(*domain.User)
+	if !ok || user == nil {
+		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
+	}
+
+	reportsQuery := query.GetDeniedReportsByUserIdQuery{UserId: user.Id}
+	reports, err := h.GetDeniedReportsByUserIdHandler.Handle(r.Context(), reportsQuery)
+	if err != nil {
+		return util.HandleError(w, err, http.StatusBadRequest)
+	}
+
+	if reports == nil {
+		reports = []repDomain.Report{}
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
+}
+
+func (h *ReportHandler) GetOwnDeniedReport(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+
+	user, ok := r.Context().Value("user").(*domain.User)
+	if !ok || user == nil {
+		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
+	}
+
+	reportQuery := query.GetDeniedReportByUserIdQuery{Id: id, UserId: user.Id}
+	report, err := h.GetDeniedReportByUserIdHandler.Handle(r.Context(), reportQuery)
+	if err != nil {
+		return util.HandleError(w, err, http.StatusNotFound)
+	}
+
+	return util.WriteJson(w, http.StatusOK, report)
+}
+
+func (h *ReportHandler) GetDeniedReports(w http.ResponseWriter, r *http.Request) error {
+	reports, err := h.GetDeniedReportsHandler.Handle(r.Context())
+	if err != nil {
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	if reports == nil {
+		reports = []repDomain.Report{}
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
+}
+
+func (h *ReportHandler) GetDeniedReport(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+
+	reportQuery := query.GetDeniedReportQuery{Id: id}
+	report, err := h.GetDeniedReportHandler.Handle(r.Context(), reportQuery)
+	if err != nil {
+		return util.HandleError(w, err, http.StatusNotFound)
+	}
+
+	return util.WriteJson(w, http.StatusOK, report)
+}
+
+func (h *ReportHandler) GetDeniedReportsForUser(w http.ResponseWriter, r *http.Request) error {
+	userId := chi.URLParam(r, "user_id")
+
+	reportsQuery := query.GetDeniedReportsByUserIdQuery{UserId: userId}
+	reports, err := h.GetDeniedReportsByUserIdHandler.Handle(r.Context(), reportsQuery)
+	if err != nil {
+		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
+	}
+
+	if reports == nil {
+		reports = []repDomain.Report{}
+	}
+
+	return util.WriteJson(w, http.StatusOK, reports)
+}
+
+func (h *ReportHandler) GetDeniedReportForUser(w http.ResponseWriter, r *http.Request) error {
+	userId := chi.URLParam(r, "user_id")
+	id := chi.URLParam(r, "id")
+
+	reportQuery := query.GetDeniedReportByUserIdQuery{Id: id, UserId: userId}
+	report, err := h.GetDeniedReportByUserIdHandler.Handle(r.Context(), reportQuery)
+	if err != nil {
+		return util.HandleError(w, err, http.StatusNotFound)
+	}
+
+	return util.WriteJson(w, http.StatusOK, report)
+}
+
+func (h *ReportHandler) UpdatePendingReport(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+	userId := chi.URLParam(r, "user_id")
+
+	var req struct {
+		LocationId       string `json:"location_id"`
+		WorkingHours     int64  `json:"working_hours"`
+		MaintenanceHours int64  `json:"maintenance_hours"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
+	}
+	if req.WorkingHours < 0 || req.MaintenanceHours < 0 {
+		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: "hours cannot be negative"})
+	}
+
+	reportCmd := command.UpdatePendingReportCommand{
+		UserId:           userId,
+		Id:               id,
+		LocationId:       req.LocationId,
+		WorkingHours:     uint64(req.WorkingHours),
+		MaintenanceHours: uint64(req.MaintenanceHours),
+	}
+	updatedReport, err := h.UpdatePendingReportHandler.Handle(r.Context(), reportCmd)
+	if err != nil {
+		return util.HandleError(w, err, http.StatusBadRequest)
+	}
+
+	return util.WriteJson(w, http.StatusOK, updatedReport)
 }
 
 func (h *ReportHandler) UpdateOwnPendingReport(w http.ResponseWriter, r *http.Request) error {
@@ -282,116 +428,6 @@ func (h *ReportHandler) UpdateOwnPendingReport(w http.ResponseWriter, r *http.Re
 	}
 
 	return util.WriteJson(w, http.StatusOK, updatedReport)
-}
-
-func (h *ReportHandler) UpdatePendingReport(w http.ResponseWriter, r *http.Request) error {
-	id := chi.URLParam(r, "id")
-	userId := chi.URLParam(r, "user_id")
-
-	var req struct {
-		LocationId       string `json:"location_id"`
-		WorkingHours     int64  `json:"working_hours"`
-		MaintenanceHours int64  `json:"maintenance_hours"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
-	}
-	if req.WorkingHours < 0 || req.MaintenanceHours < 0 {
-		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: "hours cannot be negative"})
-	}
-
-	reportCmd := command.UpdatePendingReportCommand{
-		UserId:           userId,
-		Id:               id,
-		LocationId:       req.LocationId,
-		WorkingHours:     uint64(req.WorkingHours),
-		MaintenanceHours: uint64(req.MaintenanceHours),
-	}
-	updatedReport, err := h.UpdatePendingReportHandler.Handle(r.Context(), reportCmd)
-	if err != nil {
-		return util.HandleError(w, err, http.StatusBadRequest)
-	}
-
-	return util.WriteJson(w, http.StatusOK, updatedReport)
-}
-
-func (h *ReportHandler) GetOwnDeniedReports(w http.ResponseWriter, r *http.Request) error {
-	user, ok := r.Context().Value("user").(*domain.User)
-	if !ok || user == nil {
-		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
-	}
-
-	reportsQuery := query.GetDeniedReportsByUserIdQuery{UserId: user.Id}
-	reports, err := h.GetDeniedReportsByUserIdHandler.Handle(r.Context(), reportsQuery)
-	if err != nil {
-		return util.HandleError(w, err, http.StatusBadRequest)
-	}
-
-	return util.WriteJson(w, http.StatusOK, reports)
-}
-
-func (h *ReportHandler) GetOwnDeniedReport(w http.ResponseWriter, r *http.Request) error {
-	id := chi.URLParam(r, "id")
-
-	user, ok := r.Context().Value("user").(*domain.User)
-	if !ok || user == nil {
-		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: domain.ErrUserNotFound.Error()})
-	}
-
-	reportQuery := query.GetDeniedReportByUserIdQuery{Id: id, UserId: user.Id}
-	report, err := h.GetDeniedReportByUserIdHandler.Handle(r.Context(), reportQuery)
-	if err != nil {
-		return util.HandleError(w, err, http.StatusNotFound)
-	}
-
-	return util.WriteJson(w, http.StatusOK, report)
-}
-
-func (h *ReportHandler) GetDeniedReports(w http.ResponseWriter, r *http.Request) error {
-	reports, err := h.GetDeniedReportsHandler.Handle(r.Context())
-	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
-	}
-
-	return util.WriteJson(w, http.StatusOK, reports)
-}
-
-func (h *ReportHandler) GetDeniedReport(w http.ResponseWriter, r *http.Request) error {
-	id := chi.URLParam(r, "id")
-
-	reportQuery := query.GetDeniedReportQuery{Id: id}
-	report, err := h.GetDeniedReportHandler.Handle(r.Context(), reportQuery)
-	if err != nil {
-		return util.HandleError(w, err, http.StatusNotFound)
-	}
-
-	return util.WriteJson(w, http.StatusOK, report)
-}
-
-func (h *ReportHandler) GetDeniedReportsForUser(w http.ResponseWriter, r *http.Request) error {
-	userId := chi.URLParam(r, "user_id")
-
-	reportsQuery := query.GetDeniedReportsByUserIdQuery{UserId: userId}
-	reports, err := h.GetDeniedReportsByUserIdHandler.Handle(r.Context(), reportsQuery)
-	if err != nil {
-		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
-	}
-
-	return util.WriteJson(w, http.StatusOK, reports)
-}
-
-func (h *ReportHandler) GetDeniedReportForUser(w http.ResponseWriter, r *http.Request) error {
-	userId := chi.URLParam(r, "user_id")
-	id := chi.URLParam(r, "id")
-
-	reportQuery := query.GetDeniedReportByUserIdQuery{Id: id, UserId: userId}
-	report, err := h.GetDeniedReportByUserIdHandler.Handle(r.Context(), reportQuery)
-	if err != nil {
-		return util.HandleError(w, err, http.StatusNotFound)
-	}
-
-	return util.WriteJson(w, http.StatusOK, report)
 }
 
 func (h *ReportHandler) ApproveReport(w http.ResponseWriter, r *http.Request) error {
