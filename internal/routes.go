@@ -110,10 +110,22 @@ func SetupRoutes(
 					Put("/{id}", util.HttpHandler(reportHandler.UpdateOwnPendingReport))
 			})
 			r.Route("/denied", func(r chi.Router) {
-				r.With(Role(role.Manager)).
-					Get("/", util.HttpHandler(reportHandler.GetDeniedReports))
-				r.With(Role(role.Manager)).
-					Get("/{id}", util.HttpHandler(reportHandler.GetDeniedReport))
+				r.With(Role(role.Employee, role.Manager)).
+					Get("/", util.HttpHandler(reportHandler.GetOwnDeniedReports))
+				r.With(Role(role.Employee, role.Manager)).
+					Get("/{id}", util.HttpHandler(reportHandler.GetOwnDeniedReport))
+				r.Route("/users", func(r chi.Router) {
+					r.Route("/all", func(r chi.Router) {
+						r.With(Role(role.Manager)).
+							Get("/", util.HttpHandler(reportHandler.GetDeniedReports))
+						r.With(Role(role.Manager)).
+							Get("/{id}", util.HttpHandler(reportHandler.GetDeniedReport))
+					})
+					r.With(Role(role.Manager)).
+						Get("/{user_id}", util.HttpHandler(reportHandler.GetDeniedReportsForUser))
+					r.With(Role(role.Manager)).
+						Get("/{user_id}/{id}", util.HttpHandler(reportHandler.GetDeniedReportForUser))
+				})
 			})
 			r.With(Role(role.Manager)).
 				Patch("/{id}/approve", util.HttpHandler(reportHandler.ApproveReport))

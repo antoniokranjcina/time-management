@@ -14,7 +14,10 @@ type GetPendingReportByUserIdHandler struct {
 	Repo domain.ReportRepository
 }
 
-func (h *GetPendingReportByUserIdHandler) Handle(ctx context.Context, query GetPendingReportByUserIdQuery) (*domain.Report, error) {
+func (h *GetPendingReportByUserIdHandler) Handle(
+	ctx context.Context,
+	query GetPendingReportByUserIdQuery,
+) (*domain.Report, error) {
 	reports, err := h.Repo.GetByIdWithUserId(ctx, query.Id, query.UserId, domain.Pending)
 	if err != nil {
 		return nil, err

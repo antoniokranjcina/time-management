@@ -47,6 +47,10 @@ func (r *PgReportRepository) ScanReportRows(rows *sql.Rows) ([]domain.Report, er
 		reports = append(reports, report)
 	}
 
+	//if len(reports) == 0 {
+	//	return nil, nil
+	//}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
