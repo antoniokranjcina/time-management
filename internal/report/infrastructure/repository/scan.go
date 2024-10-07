@@ -2,7 +2,9 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"time-management/internal/report/domain"
+	"time-management/internal/shared/util"
 )
 
 func (r *PgReportRepository) ScanReportRow(row *sql.Row) (*domain.Report, error) {
@@ -16,6 +18,10 @@ func (r *PgReportRepository) ScanReportRow(row *sql.Row) (*domain.Report, error)
 		&location.Id, &location.Name,
 	)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, util.NewNotFoundError(domain.ErrReportNotFound)
+		}
+
 		return nil, err
 	}
 
