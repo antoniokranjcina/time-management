@@ -144,12 +144,12 @@ func (r *PgUserRepository) GetAllWithRole(role string) ([]domain.User, error) {
 	}
 	defer rows.Close()
 
-	employees, err := ScanUserRows(rows)
+	users, err := ScanUserRows(rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return employees, nil
+	return users, nil
 }
 
 func (r *PgUserRepository) GetByIdWithRole(id, role string) (*domain.User, error) {

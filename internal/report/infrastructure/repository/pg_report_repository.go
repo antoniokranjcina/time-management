@@ -12,7 +12,7 @@ import (
 	userPg "time-management/internal/user/infrastructure/repository"
 )
 
-const tableName = "reports"
+const TableName = "reports"
 
 type PgReportRepository struct {
 	DB *sql.DB
@@ -33,13 +33,13 @@ func (r *PgReportRepository) createLocationTable() error {
 	query := fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %s (
 			id VARCHAR(50) PRIMARY KEY,
-			employee_id VARCHAR(50) REFERENCES %s(id) ON DELETE CASCADE,
+			user_id VARCHAR(50) REFERENCES %s(id) ON DELETE CASCADE,
 			location_id VARCHAR(50) REFERENCES %s(id) ON DELETE CASCADE,
 			working_hours SERIAL,
 			maintenance_hours SERIAL,
 			status SERIAL,
 			created_at SERIAL
-		)`, tableName, userPg.TableName, locationPg.TableName)
+		)`, TableName, userPg.TableName, locationPg.TableName)
 
 	_, err := r.DB.Exec(query)
 	return err
@@ -49,14 +49,14 @@ func (r *PgReportRepository) Create(ctx context.Context, report *domain.Report) 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	employeeExistChan := make(chan bool)
-	locationExistChan := make(chan bool)
+	employeeExistChan := make(chan bool, 1)
+	locationExistChan := make(chan bool, 1)
 	errorChan := make(chan error, 2)
 
 	// Concurrent check for employee and location existence
 	go func() {
 		defer wg.Done()
-		exists, err := r.checkIfRecordExists(ctx, report.Employee.Id, userPg.TableName)
+		exists, err := r.checkIfRecordExists(ctx, report.User.Id, userPg.TableName)
 		if err != nil {
 			errorChan <- err
 			return
@@ -75,11 +75,14 @@ func (r *PgReportRepository) Create(ctx context.Context, report *domain.Report) 
 	}()
 
 	// Wait for both go routines to finish
-	wg.Wait()
-	close(employeeExistChan)
-	close(locationExistChan)
-	close(errorChan)
+	go func() {
+		wg.Wait()
+		close(employeeExistChan)
+		close(locationExistChan)
+		close(errorChan)
+	}()
 
+	// Handle the results from the channels
 	var employeeExist, locationExist bool
 	for err := range errorChan {
 		if err != nil {
@@ -103,15 +106,15 @@ func (r *PgReportRepository) Create(ctx context.Context, report *domain.Report) 
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, employee_id, location_id, working_hours, maintenance_hours, status, created_at)
+		INSERT INTO %s (id, user_id, location_id, working_hours, maintenance_hours, status, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
-	`, tableName)
+	`, TableName)
 
 	row := tx.QueryRowContext(
 		ctx,
 		query, report.Id,
-		report.Employee.Id,
+		report.User.Id,
 		report.Location.Id,
 		report.WorkingHours,
 		report.MaintenanceHours,
@@ -137,13 +140,13 @@ func (r *PgReportRepository) GetAll(ctx context.Context, status domain.ReportSta
 	query := fmt.Sprintf(`
 		SELECT 
 			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
-			e.id, e.first_name, e.last_name, e.email,
+			u.id, u.first_name, u.last_name, u.email,
 			l.id, l.name
 		FROM %s r
-		JOIN %s e ON r.employee_id = e.id
+		JOIN %s u ON r.user_id = u.id
 		JOIN %s l ON r.location_id = l.id
 		WHERE r.status = $1;
-	`, tableName, userPg.TableName, locationPg.TableName)
+	`, TableName, userPg.TableName, locationPg.TableName)
 
 	rows, err := r.DB.QueryContext(ctx, query, status)
 	if err != nil {
@@ -156,21 +159,21 @@ func (r *PgReportRepository) GetAll(ctx context.Context, status domain.ReportSta
 
 func (r *PgReportRepository) GetAllWithUserId(
 	ctx context.Context,
-	employeeId string,
+	userId string,
 	status domain.ReportStatus,
 ) ([]domain.Report, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
-			e.id, e.first_name, e.last_name, e.email,
+			u.id, u.first_name, u.last_name, u.email,
 			l.id, l.name
 		FROM %s r
-		JOIN %s e ON r.employee_id = e.id
+		JOIN %s u ON r.user_id = u.id
 		JOIN %s l ON r.location_id = l.id
-		WHERE r.employee_id = $1 AND r.status = $2;
-	`, tableName, userPg.TableName, locationPg.TableName)
+		WHERE r.status = $1 AND r.user_id = $2;
+	`, TableName, userPg.TableName, locationPg.TableName)
 
-	rows, err := r.DB.QueryContext(ctx, query, employeeId, status)
+	rows, err := r.DB.QueryContext(ctx, query, status, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -197,23 +200,23 @@ func (r *PgReportRepository) GetById(
 }
 
 func (r *PgReportRepository) GetByIdWithUserId(
-	ctx context.Context, id,
-	userId string,
+	ctx context.Context,
+	id, userId string,
 	status domain.ReportStatus,
 ) (*domain.Report, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
-			e.id, e.first_name, e.last_name, e.email,
+			u.id, u.first_name, u.last_name, u.email,
 			l.id, l.name
 		FROM %s r
-		JOIN %s e ON r.employee_id = e.id
+		JOIN %s u ON r.user_id = u.id
 		JOIN %s l ON r.location_id = l.id
-		WHERE r.employee_id = $1 AND r.id = $2 AND r.status = $3;
+		WHERE r.id = $1 AND r.status = $2 AND r.user_id = $3;
 
-	`, tableName, userPg.TableName, locationPg.TableName)
+	`, TableName, userPg.TableName, locationPg.TableName)
 
-	row := r.DB.QueryRowContext(ctx, query, userId, id, status)
+	row := r.DB.QueryRowContext(ctx, query, id, status, userId)
 
 	return r.ScanReportRow(row)
 }
@@ -234,8 +237,8 @@ func (r *PgReportRepository) Update(
 
 	query := fmt.Sprintf(`
 		UPDATE %s SET working_hours=$1, maintenance_hours=$2, location_id=$3 
-		WHERE id=$4 AND employee_id=$5 AND status=$6
-	`, tableName)
+		WHERE id=$4 AND user_id=$5 AND status=$6
+	`, TableName)
 
 	result, err := r.DB.ExecContext(ctx, query, workingHours, maintenanceHours, locationId, id, userId, status)
 	if err != nil {
@@ -260,7 +263,7 @@ func (r *PgReportRepository) Update(
 }
 
 func (r *PgReportRepository) Approve(ctx context.Context, id string) error {
-	query := fmt.Sprintf(`UPDATE %s SET status = $1 WHERE id = $2`, tableName)
+	query := fmt.Sprintf(`UPDATE %s SET status = $1 WHERE id = $2`, TableName)
 
 	_, err := r.DB.ExecContext(ctx, query, domain.Approved, id)
 	if err != nil {
@@ -271,7 +274,7 @@ func (r *PgReportRepository) Approve(ctx context.Context, id string) error {
 }
 
 func (r *PgReportRepository) Deny(ctx context.Context, id string) error {
-	query := fmt.Sprintf(`UPDATE %s SET status = $1 WHERE id = $2`, tableName)
+	query := fmt.Sprintf(`UPDATE %s SET status = $1 WHERE id = $2`, TableName)
 
 	_, err := r.DB.ExecContext(ctx, query, domain.Denied, id)
 	if err != nil {
@@ -282,7 +285,7 @@ func (r *PgReportRepository) Deny(ctx context.Context, id string) error {
 }
 
 func (r *PgReportRepository) Delete(ctx context.Context, id string) error {
-	query := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`, tableName)
+	query := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`, TableName)
 
 	_, err := r.DB.ExecContext(ctx, query, id)
 	if err != nil {
@@ -309,7 +312,7 @@ func (r *PgReportRepository) checkIfReportMatchesStatus(
 	id string,
 	status domain.ReportStatus,
 ) (bool, error) {
-	query := fmt.Sprintf(`SELECT EXISTS(SELECT 1 FROM %s WHERE id = $1 AND status = $2)`, tableName)
+	query := fmt.Sprintf(`SELECT EXISTS(SELECT 1 FROM %s WHERE id = $1 AND status = $2)`, TableName)
 
 	var matches bool
 	err := r.DB.QueryRowContext(ctx, query, id, status).Scan(&matches)
@@ -328,13 +331,13 @@ func (r *PgReportRepository) getFullReport(
 	baseQuery := fmt.Sprintf(`
 		SELECT 
 			r.id, r.working_hours, r.maintenance_hours, r.status, r.created_at,
-			e.id, e.first_name, e.last_name, e.email,
+			u.id, u.first_name, u.last_name, u.email,
 			l.id, l.name
 		FROM %s r
-		JOIN %s e ON r.employee_id = e.id
+		JOIN %s u ON r.user_id = u.id
 		JOIN %s l ON r.location_id = l.id
 		WHERE r.id = $1
-	`, tableName, userPg.TableName, locationPg.TableName)
+	`, TableName, userPg.TableName, locationPg.TableName)
 
 	if status != nil {
 		baseQuery += " AND r.status = $2"

@@ -9,7 +9,7 @@ import (
 
 func (r *PgReportRepository) ScanReportRow(row *sql.Row) (*domain.Report, error) {
 	var report domain.Report
-	var employee domain.Employee
+	var employee domain.User
 	var location domain.Location
 
 	err := row.Scan(
@@ -25,7 +25,7 @@ func (r *PgReportRepository) ScanReportRow(row *sql.Row) (*domain.Report, error)
 		return nil, err
 	}
 
-	report.Employee = employee
+	report.User = employee
 	report.Location = location
 
 	return &report, nil
@@ -36,26 +36,22 @@ func (r *PgReportRepository) ScanReportRows(rows *sql.Rows) ([]domain.Report, er
 
 	for rows.Next() {
 		var report domain.Report
-		var employee domain.Employee
+		var user domain.User
 		var location domain.Location
 
 		err := rows.Scan(
 			&report.Id, &report.WorkingHours, &report.MaintenanceHours, &report.Status, &report.CreatedAt,
-			&employee.Id, &employee.FirstName, &employee.LastName, &employee.Email,
+			&user.Id, &user.FirstName, &user.LastName, &user.Email,
 			&location.Id, &location.Name,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		report.Employee = employee
+		report.User = user
 		report.Location = location
 		reports = append(reports, report)
 	}
-
-	//if len(reports) == 0 {
-	//	return nil, nil
-	//}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
