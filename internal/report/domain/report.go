@@ -2,7 +2,7 @@ package domain
 
 type Report struct {
 	Id               string       `json:"id"`
-	Employee         Employee     `json:"employee"`
+	User             User         `json:"user"`
 	Location         Location     `json:"location"`
 	WorkingHours     uint64       `json:"working_hours"`
 	MaintenanceHours uint64       `json:"maintenance_hours"`
@@ -10,7 +10,7 @@ type Report struct {
 	CreatedAt        uint64       `json:"created_at"`
 }
 
-type Employee struct {
+type User struct {
 	Id        string `json:"id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
@@ -24,7 +24,7 @@ type Location struct {
 
 func NewReport(
 	id string,
-	employeeId string,
+	userId string,
 	locationId string,
 	workingHours uint64,
 	maintenanceHours uint64,
@@ -33,7 +33,7 @@ func NewReport(
 ) *Report {
 	return &Report{
 		Id:               id,
-		Employee:         Employee{Id: employeeId},
+		User:             User{Id: userId},
 		Location:         Location{Id: locationId},
 		WorkingHours:     workingHours,
 		MaintenanceHours: maintenanceHours,
