@@ -37,7 +37,7 @@ func (h *LocationHandler) CreateLocation(w http.ResponseWriter, r *http.Request)
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	location, err := h.CreateLocationHandler.Handle(command.CreateLocationCommand{Name: req.Name})
+	location, err := h.CreateLocationHandler.Handle(r.Context(), command.CreateLocationCommand{Name: req.Name})
 	if err != nil {
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
@@ -46,7 +46,7 @@ func (h *LocationHandler) CreateLocation(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *LocationHandler) GetLocations(w http.ResponseWriter, r *http.Request) error {
-	locations, err := h.GetLocationsHandler.Handle()
+	locations, err := h.GetLocationsHandler.Handle(r.Context())
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
@@ -57,7 +57,7 @@ func (h *LocationHandler) GetLocations(w http.ResponseWriter, r *http.Request) e
 func (h *LocationHandler) GetLocation(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
-	location, err := h.GetLocationHandler.Handle(query.GetLocationQuery{Id: id})
+	location, err := h.GetLocationHandler.Handle(r.Context(), query.GetLocationQuery{Id: id})
 	if err != nil {
 		return util.HandleError(w, err, http.StatusNotFound)
 	}
@@ -76,7 +76,10 @@ func (h *LocationHandler) UpdateLocation(w http.ResponseWriter, r *http.Request)
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: "Invalid request body"})
 	}
 
-	location, err := h.UpdateLocationHandler.Handle(command.UpdateLocationCommand{Id: id, Name: requestData.Name})
+	location, err := h.UpdateLocationHandler.Handle(
+		r.Context(),
+		command.UpdateLocationCommand{Id: id, Name: requestData.Name},
+	)
 	if err != nil {
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
@@ -87,7 +90,7 @@ func (h *LocationHandler) UpdateLocation(w http.ResponseWriter, r *http.Request)
 func (h *LocationHandler) DeleteLocation(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
-	err := h.DeleteLocationHandler.Handle(command.DeleteLocationCommand{Id: id})
+	err := h.DeleteLocationHandler.Handle(r.Context(), command.DeleteLocationCommand{Id: id})
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
