@@ -1,10 +1,10 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"time-management/internal/location/domain"
 	"time-management/internal/shared/util"
 )
@@ -17,7 +17,6 @@ type PgLocationRepository struct {
 
 func NewPgLocationRepository(db *sql.DB) *PgLocationRepository {
 	repository := &PgLocationRepository{DB: db}
-
 	err := repository.createLocationTable()
 	if err != nil {
 		panic(err)
@@ -28,43 +27,43 @@ func NewPgLocationRepository(db *sql.DB) *PgLocationRepository {
 }
 
 func (r *PgLocationRepository) createLocationTable() error {
-	query := fmt.Sprintf(`create table if not exists %s (
-		id varchar(50) primary key,
-		name varchar(50),
-		created_at serial
+	query := fmt.Sprintf(
+		`CREATE TABLE IF NOT EXISTS %s (
+		id VARCHAR(50) PRIMARY KEY,
+		name VARCHAR(50),
+		created_at SERIAL
 	)`, TableName)
 
 	_, err := r.DB.Exec(query)
 	return err
 }
 
-func (r *PgLocationRepository) Save(location *domain.Location) (*domain.Location, error) {
+func (r *PgLocationRepository) Create(ctx context.Context, location *domain.Location) (*domain.Location, error) {
 	query := fmt.Sprintf(`
 		INSERT INTO %s (id, name, created_at) 
 		VALUES ($1, $2, $3) 
 		RETURNING id, name, created_at
 	`, TableName)
 
-	row := r.DB.QueryRow(query, location.Id, location.Name, location.CreatedAt)
-	savedLocation, err := scanLocationRow(row)
+	row := r.DB.QueryRowContext(ctx, query, location.Id, location.Name, location.CreatedAt)
+	savedLocation, err := ScanLocationRow(row)
 	if err != nil {
-		log.Println("Error adding location:", err)
 		return nil, err
 	}
 
 	return savedLocation, nil
 }
 
-func (r *PgLocationRepository) GetAll() ([]domain.Location, error) {
+func (r *PgLocationRepository) GetAll(ctx context.Context) ([]domain.Location, error) {
 	query := fmt.Sprintf(`SELECT * FROM %s`, TableName)
 
-	rows, err := r.DB.Query(query)
+	rows, err := r.DB.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	locations, err := scanLocationRows(rows)
+	locations, err := ScanLocationRows(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -72,11 +71,11 @@ func (r *PgLocationRepository) GetAll() ([]domain.Location, error) {
 	return locations, nil
 }
 
-func (r *PgLocationRepository) GetById(id string) (*domain.Location, error) {
+func (r *PgLocationRepository) GetById(ctx context.Context, id string) (*domain.Location, error) {
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1`, TableName)
 
-	row := r.DB.QueryRow(query, id)
-	location, err := scanLocationRow(row)
+	row := r.DB.QueryRowContext(ctx, query, id)
+	location, err := ScanLocationRow(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, util.NewValidationError(domain.ErrLocationNotFound)
@@ -87,11 +86,11 @@ func (r *PgLocationRepository) GetById(id string) (*domain.Location, error) {
 	return location, nil
 }
 
-func (r *PgLocationRepository) Update(id string, name string) (*domain.Location, error) {
+func (r *PgLocationRepository) Update(ctx context.Context, id, name string) (*domain.Location, error) {
 	query := fmt.Sprintf(`UPDATE %s SET name = $1 WHERE id = $2 RETURNING id, name, created_at`, TableName)
 
-	row := r.DB.QueryRow(query, name, id)
-	location, err := scanLocationRow(row)
+	row := r.DB.QueryRowContext(ctx, query, name, id)
+	location, err := ScanLocationRow(row)
 	if err != nil {
 		return nil, err
 	}
@@ -99,38 +98,13 @@ func (r *PgLocationRepository) Update(id string, name string) (*domain.Location,
 	return location, nil
 }
 
-func (r *PgLocationRepository) Delete(id string) error {
+func (r *PgLocationRepository) Delete(ctx context.Context, id string) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`, TableName)
 
-	_, err := r.DB.Exec(query, id)
+	_, err := r.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func scanLocationRow(row *sql.Row) (*domain.Location, error) {
-	location := &domain.Location{}
-	err := row.Scan(&location.Id, &location.Name, &location.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-
-	return location, nil
-}
-
-func scanLocationRows(rows *sql.Rows) ([]domain.Location, error) {
-	var locations []domain.Location
-
-	for rows.Next() {
-		var location domain.Location
-		err := rows.Scan(&location.Id, &location.Name, &location.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		locations = append(locations, location)
-	}
-
-	return locations, nil
 }

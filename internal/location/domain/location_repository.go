@@ -1,9 +1,11 @@
 package domain
 
+import "context"
+
 type LocationRepository interface {
-	Save(location *Location) (*Location, error)
-	GetAll() ([]Location, error)
-	GetById(id string) (*Location, error)
-	Update(id string, name string) (*Location, error)
-	Delete(id string) error
+	Create(ctx context.Context, location *Location) (*Location, error)
+	GetAll(ctx context.Context) ([]Location, error)
+	GetById(ctx context.Context, id string) (*Location, error)
+	Update(ctx context.Context, id, name string) (*Location, error)
+	Delete(ctx context.Context, id string) error
 }
