@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"time-management/internal/user/domain"
 )
 
@@ -13,8 +14,8 @@ type ToggleStatusHandler struct {
 	Repo domain.UserRepository
 }
 
-func (h *ToggleStatusHandler) Handle(cmd ToggleStatusCommand) (bool, error) {
-	newStatus, err := h.Repo.ToggleStatus(cmd.Id, cmd.Active)
+func (h *ToggleStatusHandler) Handle(ctx context.Context, cmd ToggleStatusCommand) (bool, error) {
+	newStatus, err := h.Repo.ToggleStatus(ctx, cmd.Id, cmd.Active)
 	if err != nil {
 		return cmd.Active, err
 	}

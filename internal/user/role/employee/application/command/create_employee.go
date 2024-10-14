@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"net/mail"
@@ -21,7 +22,7 @@ type CreateEmployeeHandler struct {
 	Repo domain.UserRepository
 }
 
-func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*empDomain.Employee, error) {
+func (h *CreateEmployeeHandler) Handle(ctx context.Context, cmd CreateEmployeeCommand) (*empDomain.Employee, error) {
 	if cmd.FirstName == "" {
 		return nil, sharedUtil.NewValidationError(domain.ErrFirstNameTooShort)
 	}
@@ -50,7 +51,7 @@ func (h *CreateEmployeeHandler) Handle(cmd CreateEmployeeCommand) (*empDomain.Em
 		true,
 	)
 
-	createdUser, err := h.Repo.Save(employee)
+	createdUser, err := h.Repo.Create(ctx, employee)
 	if err != nil {
 		return nil, err
 	}

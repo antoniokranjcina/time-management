@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -102,7 +103,7 @@ func (r *PgUserRepository) createSuperAdmin() error {
 	return nil
 }
 
-func (r *PgUserRepository) Save(user *domain.User) (*domain.User, error) {
+func (r *PgUserRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
 	if exists, err := r.isEmailTaken(user.Email); err != nil {
 		return nil, err
 	} else if exists {
@@ -115,7 +116,8 @@ func (r *PgUserRepository) Save(user *domain.User) (*domain.User, error) {
 		RETURNING id, first_name, last_name, email, role, password_hashed, created_at, active
 	`, TableName)
 
-	row := r.DB.QueryRow(
+	row := r.DB.QueryRowContext(
+		ctx,
 		query,
 		user.Id,
 		user.FirstName,
@@ -135,10 +137,10 @@ func (r *PgUserRepository) Save(user *domain.User) (*domain.User, error) {
 	return savedUser, nil
 }
 
-func (r *PgUserRepository) GetAllWithRole(role string) ([]domain.User, error) {
+func (r *PgUserRepository) GetAllWithRole(ctx context.Context, role string) ([]domain.User, error) {
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE role = $1`, TableName)
 
-	rows, err := r.DB.Query(query, role)
+	rows, err := r.DB.QueryContext(ctx, query, role)
 	if err != nil {
 		return nil, err
 	}
@@ -152,10 +154,10 @@ func (r *PgUserRepository) GetAllWithRole(role string) ([]domain.User, error) {
 	return users, nil
 }
 
-func (r *PgUserRepository) GetByIdWithRole(id, role string) (*domain.User, error) {
+func (r *PgUserRepository) GetByIdWithRole(ctx context.Context, id, role string) (*domain.User, error) {
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1 AND role = $2`, TableName)
 
-	row := r.DB.QueryRow(query, id, role)
+	row := r.DB.QueryRowContext(ctx, query, id, role)
 	user, err := ScanUserRow(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -167,10 +169,10 @@ func (r *PgUserRepository) GetByIdWithRole(id, role string) (*domain.User, error
 	return user, nil
 }
 
-func (r *PgUserRepository) GetByEmail(email string) (*domain.User, error) {
+func (r *PgUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE email = $1`, TableName)
 
-	row := r.DB.QueryRow(query, email)
+	row := r.DB.QueryRowContext(ctx, query, email)
 	user, err := ScanUserRow(row)
 	if err != nil {
 		return nil, err
@@ -179,14 +181,14 @@ func (r *PgUserRepository) GetByEmail(email string) (*domain.User, error) {
 	return user, nil
 }
 
-func (r *PgUserRepository) Update(id, firstName, lastName string) (*domain.User, error) {
+func (r *PgUserRepository) Update(ctx context.Context, id, firstName, lastName string) (*domain.User, error) {
 	query := fmt.Sprintf(`
 		UPDATE %s SET first_name = $1, last_name = $2 
 	 	WHERE id = $3 
 		RETURNING id, first_name, last_name, email, role, password_hashed, created_at, active
 	`, TableName)
 
-	row := r.DB.QueryRow(query, firstName, lastName, id)
+	row := r.DB.QueryRowContext(ctx, query, firstName, lastName, id)
 	user, err := ScanUserRow(row)
 	if err != nil {
 		return nil, err
@@ -195,10 +197,10 @@ func (r *PgUserRepository) Update(id, firstName, lastName string) (*domain.User,
 	return user, nil
 }
 
-func (r *PgUserRepository) ChangePassword(id, password string) error {
+func (r *PgUserRepository) ChangePassword(ctx context.Context, id, password string) error {
 	query := fmt.Sprintf(`UPDATE %s SET password_hashed = $1 WHERE id = $2`, TableName)
 
-	_, err := r.DB.Exec(query, password, id)
+	_, err := r.DB.ExecContext(ctx, query, password, id)
 	if err != nil {
 		return err
 	}
@@ -206,7 +208,7 @@ func (r *PgUserRepository) ChangePassword(id, password string) error {
 	return nil
 }
 
-func (r *PgUserRepository) ChangeEmail(id, email string) error {
+func (r *PgUserRepository) ChangeEmail(ctx context.Context, id, email string) error {
 	currentMail, err := r.getEmailById(id)
 	if err != nil {
 		return err
@@ -217,7 +219,7 @@ func (r *PgUserRepository) ChangeEmail(id, email string) error {
 
 	query := fmt.Sprintf(`UPDATE %s SET email = $1 WHERE id = $2`, TableName)
 
-	_, err = r.DB.Exec(query, email, id)
+	_, err = r.DB.ExecContext(ctx, query, email, id)
 	if err != nil {
 		return err
 	}
@@ -225,11 +227,11 @@ func (r *PgUserRepository) ChangeEmail(id, email string) error {
 	return nil
 }
 
-func (r *PgUserRepository) ToggleStatus(id string, status bool) (bool, error) {
+func (r *PgUserRepository) ToggleStatus(ctx context.Context, id string, status bool) (bool, error) {
 	query := fmt.Sprintf(`UPDATE %s SET active = $1 WHERE id = $2 RETURNING active`, TableName)
 
 	var newStatus bool
-	err := r.DB.QueryRow(query, status, id).Scan(&newStatus)
+	err := r.DB.QueryRowContext(ctx, query, status, id).Scan(&newStatus)
 	if err != nil {
 		return false, err
 	}
@@ -237,10 +239,10 @@ func (r *PgUserRepository) ToggleStatus(id string, status bool) (bool, error) {
 	return newStatus, nil
 }
 
-func (r *PgUserRepository) Delete(id string) error {
+func (r *PgUserRepository) Delete(ctx context.Context, id string) error {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE id = $1`, TableName)
 
-	_, err := r.DB.Exec(query, id)
+	_, err := r.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}

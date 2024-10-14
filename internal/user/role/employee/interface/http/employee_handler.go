@@ -45,12 +45,13 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	employee, err := h.CreateEmployeeHandler.Handle(command.CreateEmployeeCommand{
+	cmd := command.CreateEmployeeCommand{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,
 		Password:  req.Password,
-	})
+	}
+	employee, err := h.CreateEmployeeHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
@@ -59,7 +60,7 @@ func (h *EmployeeHandler) CreateEmployee(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) error {
-	employees, err := h.GetEmployeesHandler.Handle()
+	employees, err := h.GetEmployeesHandler.Handle(r.Context())
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
@@ -70,7 +71,7 @@ func (h *EmployeeHandler) GetEmployees(w http.ResponseWriter, r *http.Request) e
 func (h *EmployeeHandler) GetEmployee(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
-	employee, err := h.GetEmployeeHandler.Handle(query.GetEmployeeQuery{Id: id})
+	employee, err := h.GetEmployeeHandler.Handle(r.Context(), query.GetEmployeeQuery{Id: id})
 	if err != nil {
 		return util.HandleError(w, err, http.StatusNotFound)
 	}
@@ -88,11 +89,12 @@ func (h *EmployeeHandler) UpdateEmployee(w http.ResponseWriter, r *http.Request)
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	updatedEmployee, err := h.UpdateEmployeeHandler.Handle(command.UpdateEmployeeCommand{
+	cmd := command.UpdateEmployeeCommand{
 		Id:        id,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
-	})
+	}
+	updatedEmployee, err := h.UpdateEmployeeHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
@@ -117,10 +119,11 @@ func (h *EmployeeHandler) ChangePassword(w http.ResponseWriter, r *http.Request)
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	err := h.UpdatePasswordHandler.Handle(command.UpdatePasswordCommand{
+	cmd := command.UpdatePasswordCommand{
 		Id:       id,
 		Password: req.Password,
-	})
+	}
+	err := h.UpdatePasswordHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
@@ -145,10 +148,11 @@ func (h *EmployeeHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) er
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	err := h.UpdateEmailHandler.Handle(command.UpdateEmailCommand{
+	cmd := command.UpdateEmailCommand{
 		Id:    id,
 		Email: req.Email,
-	})
+	}
+	err := h.UpdateEmailHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
@@ -165,10 +169,11 @@ func (h *EmployeeHandler) ToggleEmployeeStatus(w http.ResponseWriter, r *http.Re
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	status, err := h.ToggleStatusHandler.Handle(command.ToggleStatusCommand{
+	cmd := command.ToggleStatusCommand{
 		Id:     id,
 		Active: req.Active,
-	})
+	}
+	status, err := h.ToggleStatusHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
@@ -179,7 +184,7 @@ func (h *EmployeeHandler) ToggleEmployeeStatus(w http.ResponseWriter, r *http.Re
 func (h *EmployeeHandler) DeleteEmployee(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
-	err := h.DeleteEmployeeHandler.Handle(command.DeleteEmployeeCommand{Id: id})
+	err := h.DeleteEmployeeHandler.Handle(r.Context(), command.DeleteEmployeeCommand{Id: id})
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
