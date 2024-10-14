@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"net/mail"
@@ -24,12 +25,12 @@ type LoginUserHandler struct {
 	Repo domain.UserRepository
 }
 
-func (h *LoginUserHandler) Handle(cmd LoginUserCommand) (*string, error) {
+func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (*string, error) {
 	if _, err := mail.ParseAddress(cmd.Email); err != nil {
 		return nil, sharedUtil.NewValidationError(domain.ErrEmailWrongFormat)
 	}
 
-	user, err := h.Repo.GetByEmail(cmd.Email)
+	user, err := h.Repo.GetByEmail(ctx, cmd.Email)
 	if err != nil {
 		return nil, domain.ErrInvalidEmailOrPassword
 	}

@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	sharedUtil "time-management/internal/shared/util"
 	"time-management/internal/user/domain"
 	empDomain "time-management/internal/user/role/employee/domain"
@@ -16,7 +17,7 @@ type UpdateEmployeeHandler struct {
 	Repo domain.UserRepository
 }
 
-func (h *UpdateEmployeeHandler) Handle(cmd UpdateEmployeeCommand) (*empDomain.Employee, error) {
+func (h *UpdateEmployeeHandler) Handle(ctx context.Context, cmd UpdateEmployeeCommand) (*empDomain.Employee, error) {
 	if cmd.FirstName == "" {
 		return nil, sharedUtil.NewValidationError(domain.ErrFirstNameTooShort)
 	}
@@ -24,7 +25,7 @@ func (h *UpdateEmployeeHandler) Handle(cmd UpdateEmployeeCommand) (*empDomain.Em
 		return nil, sharedUtil.NewValidationError(domain.ErrLastNameTooShort)
 	}
 
-	updatedUser, err := h.Repo.Update(cmd.Id, cmd.FirstName, cmd.LastName)
+	updatedUser, err := h.Repo.Update(ctx, cmd.Id, cmd.FirstName, cmd.LastName)
 	if err != nil {
 		return nil, err
 	}

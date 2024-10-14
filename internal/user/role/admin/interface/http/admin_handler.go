@@ -39,12 +39,13 @@ func (h *AdminHandler) CreateAdmin(w http.ResponseWriter, r *http.Request) error
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	admin, err := h.CreateAdminHandler.Handle(command.CreateAdminCommand{
+	cmd := command.CreateAdminCommand{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,
 		Password:  req.Password,
-	})
+	}
+	admin, err := h.CreateAdminHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
@@ -53,7 +54,7 @@ func (h *AdminHandler) CreateAdmin(w http.ResponseWriter, r *http.Request) error
 }
 
 func (h *AdminHandler) GetAdmins(w http.ResponseWriter, r *http.Request) error {
-	admins, err := h.GetAdminsHandler.Handle()
+	admins, err := h.GetAdminsHandler.Handle(r.Context())
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}
@@ -64,7 +65,7 @@ func (h *AdminHandler) GetAdmins(w http.ResponseWriter, r *http.Request) error {
 func (h *AdminHandler) GetAdminById(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
-	admin, err := h.GetAdminHandler.Handle(query.GetAdminQuery{Id: id})
+	admin, err := h.GetAdminHandler.Handle(r.Context(), query.GetAdminQuery{Id: id})
 	if err != nil {
 		return util.HandleError(w, err, http.StatusNotFound)
 	}
@@ -82,11 +83,12 @@ func (h *AdminHandler) UpdateAdmin(w http.ResponseWriter, r *http.Request) error
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	updatedAdmin, err := h.UpdateAdminHandler.Handle(command.UpdateAdminCommand{
+	cmd := command.UpdateAdminCommand{
 		Id:        id,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
-	})
+	}
+	updatedAdmin, err := h.UpdateAdminHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		return util.HandleError(w, err, http.StatusBadRequest)
 	}
@@ -97,7 +99,7 @@ func (h *AdminHandler) UpdateAdmin(w http.ResponseWriter, r *http.Request) error
 func (h *AdminHandler) DeleteAdmin(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
-	err := h.DeleteAdminHandler.Handle(command.DeleteAdminCommand{Id: id})
+	err := h.DeleteAdminHandler.Handle(r.Context(), command.DeleteAdminCommand{Id: id})
 	if err != nil {
 		return util.WriteJson(w, http.StatusInternalServerError, util.ApiError{Error: domain.ErrInternalServer.Error()})
 	}

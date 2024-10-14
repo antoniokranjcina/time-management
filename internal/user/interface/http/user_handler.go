@@ -31,10 +31,11 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) error {
 		return util.WriteJson(w, http.StatusBadRequest, util.ApiError{Error: err.Error()})
 	}
 
-	token, err := h.LoginUserHandler.Handle(userCommand.LoginUserCommand{
+	cmd := userCommand.LoginUserCommand{
 		Email:    req.Email,
 		Password: req.Password,
-	})
+	}
+	token, err := h.LoginUserHandler.Handle(r.Context(), cmd)
 	if err != nil {
 		return util.WriteJson(w, http.StatusUnauthorized, util.ApiError{Error: err.Error()})
 	}

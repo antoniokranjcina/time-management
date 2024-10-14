@@ -1,6 +1,7 @@
 package query
 
 import (
+	"context"
 	"time-management/internal/user/domain"
 	"time-management/internal/user/role"
 	empDomain "time-management/internal/user/role/employee/domain"
@@ -14,8 +15,8 @@ type GetEmployeeHandler struct {
 	Repo domain.UserRepository
 }
 
-func (h *GetEmployeeHandler) Handle(query GetEmployeeQuery) (*empDomain.Employee, error) {
-	user, err := h.Repo.GetByIdWithRole(query.Id, role.Employee.String())
+func (h *GetEmployeeHandler) Handle(ctx context.Context, query GetEmployeeQuery) (*empDomain.Employee, error) {
+	user, err := h.Repo.GetByIdWithRole(ctx, query.Id, role.Employee.String())
 	if err != nil {
 		return nil, err
 	}
